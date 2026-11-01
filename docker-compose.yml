@@ -1,0 +1,58 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: saas-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+      MYSQL_DATABASE: saas_crm
+      MYSQL_USER: saas_user
+      MYSQL_PASSWORD: saas_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - saas-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: saas-backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      - DB_HOST=mysql
+      # The schema is built by the reviewed migrations (run on start), never by TypeORM's auto-sync.
+      - DB_SYNCHRONIZE=false
+      - DB_MIGRATIONS_RUN=true
+    networks:
+      - saas-network
+      
+  frontend:
+    build:
+      context: ./web
+      args:
+        API_URL: http://backend:3000
+    container_name: saas-frontend
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
+    networks:
+      - saas-network
+
+networks:
+  saas-network:
+    driver: bridge
+
+volumes:
+  mysql_data:

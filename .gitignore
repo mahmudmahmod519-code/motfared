@@ -1,0 +1,18 @@
+# dependencies and build output
+node_modules/
+dist/
+.next/
+coverage/
+*.log
+
+# secrets and local configuration: never commit real values (keep a .env.example with placeholders)
+.env
+.env.*
+!.env.example
+
+# local databases and editor files
+*.sqlite
+*.sqlite-*
+.DS_Store
+
+*.tsbuildinfo
