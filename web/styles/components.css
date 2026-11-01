@@ -1,0 +1,200 @@
+/* components.css: controls, cards, tiles, tables, badges, modals, toasts
+   Sliced from the original dashboard's stylesheet (backend/public/index.html); test/css-parity.test.ts
+   fails if a declaration here is not the original's, apart from the justified allowlist in that test. */
+
+/* ---------------------------------------------------------------- Controls */
+button {
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--surface-1); color: var(--text-primary);
+  padding: 8px 14px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background 140ms cubic-bezier(0.2, 0, 0, 1), border-color 140ms, color 140ms;
+}
+button:hover { background: var(--surface-2); border-color: var(--text-muted); }
+button:active { background: var(--surface-3); }
+button.primary { background: var(--brand); color: #fff; border-color: transparent; }
+button.primary:hover { background: var(--brand-hover); }
+button.danger { color: var(--critical); }
+button.danger:hover { background: var(--critical-soft); border-color: var(--critical); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.icon-only { padding: 7px; }
+
+select, input[type="text"], input[type="search"], input[type="tel"], input[type="password"], input[type="date"], input[type="datetime-local"], textarea {
+  font-family: inherit; font-size: 14px;
+  border-radius: var(--radius-sm); border: 1px solid var(--gridline);
+  background: var(--surface-1); color: var(--text-primary);
+  padding: 8px 12px;
+  transition: border-color 140ms;
+}
+select { cursor: pointer; }
+select:hover, input:hover, textarea:hover { border-color: var(--text-muted); }
+input::placeholder, textarea::placeholder { color: var(--text-muted); }
+input:disabled, select:disabled, textarea:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* In-page tabs for a view made of several tables: one is shown, the rest wait behind
+   their button rather than below the fold. */
+.section-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.section-tabs button[aria-selected="true"] { background: var(--brand); color: #fff; border-color: transparent; }
+.section-tabs button[aria-selected="true"]:hover { background: var(--brand-hover); }
+.hidden { display: none !important; }
+.spacer { flex: 1; }
+
+.field { text-align: start; margin-bottom: 14px; }
+.field label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.field input, .field select, .field textarea { width: 100%; padding: 10px 12px; font-size: 15px; }
+.error { color: var(--critical); font-size: 13px; margin: 8px 0 0; min-height: 16px; }
+
+/* ---------------------------------------------------------------- Blocks */
+section { margin-top: 22px; }
+section:first-child { margin-top: 0; }
+section h3 { font-size: 15px; color: var(--text-primary); margin: 0 0 12px; font-weight: 650; }
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.section-head h3 { margin: 0; }
+.hint { font-size: 13px; color: var(--text-secondary); margin: 0 0 12px; }
+
+.card {
+  background: var(--surface-1); border: 1px solid var(--gridline);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+}
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+
+.tile {
+  background: var(--surface-1); border: 1px solid var(--gridline);
+  border-radius: var(--radius); padding: 16px 18px;
+  position: relative; overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.tile .value { font-size: 26px; font-weight: 680; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.tile .label { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.tile .pct { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.tile .bar { position: absolute; inset-inline-start: 0; top: 0; bottom: 0; width: 3px; }
+/* A tile that opens onto who did how many, for which doctor. */
+.tile.clickable { cursor: pointer; transition: border-color .15s, transform .15s; }
+.tile.clickable:hover { border-color: var(--brand); }
+.tile.selected { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+
+/* The wrapper is the scroll container in both axes: a sticky header only sticks
+   relative to the element that scrolls, so an overflow-x-only wrapper inside a
+   scrolling page never pinned anything. Capped to the viewport so long pages scroll
+   the rows under a header that stays put. */
+.table-wrap {
+  overflow: auto; max-height: min(78vh, 900px);
+  border-radius: var(--radius); border: 1px solid var(--gridline); box-shadow: var(--shadow-sm);
+  background: var(--surface-1);
+}
+.table-wrap th { z-index: 1; }
+table { width: 100%; border-collapse: collapse; background: var(--surface-1); }
+.table-wrap table { border: none; }
+/* Cells wrap rather than stretch the table: a page is read top to bottom, and a table
+   that needs a sideways scroll to reach its buttons is a table nobody reads (the owner,
+   2026-09-15). Numbers, phones and dates stay on one line; words break where they can. */
+th, td { padding: 10px 12px; text-align: start; font-size: 14px; border-bottom: 1px solid var(--gridline); white-space: normal; vertical-align: middle; }
+td[dir="ltr"], td.nowrap, th.nowrap { white-space: nowrap; }
+/* The worksheet mirrors a 24-column Google sheet: it keeps its own sideways scroll. */
+td button { margin: 2px 0; }
+/* Muted and a size step down from body text, not uppercase or tracked - Arabic
+   letterforms connect to their neighbours, so the usual Latin all-caps + tracking
+   header treatment breaks the joins instead of reading as refined. The inset shadow
+   gives the sticky header a defined edge without a second visible border. */
+th {
+  color: var(--text-muted); font-weight: 650; font-size: 14px;
+  background: var(--surface-2); position: sticky; top: 0;
+  box-shadow: inset 0 -1px 0 var(--gridline);
+}
+td { font-variant-numeric: tabular-nums; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr { transition: background 120ms; }
+/* A faint stripe on every other row carries the eye across wide tables without
+   competing with the stronger tone reserved for hover and the brand tint for selection. */
+tbody tr:nth-child(even) { background: var(--surface-2); }
+tbody tr:hover, tbody tr:nth-child(even):hover { background: var(--surface-3); }
+td button { padding: 4px 8px; font-size: 12.5px; }
+
+.empty-row { padding: 40px 16px !important; text-align: center; color: var(--text-muted); font-size: 13.5px; white-space: normal; }
+
+.badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+
+.pager {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 2px; font-size: 13px; color: var(--text-secondary);
+}
+.pager .spacer { flex: 1; }
+.pager button { padding: 6px 12px; }
+
+.empty {
+  text-align: center; padding: 44px 20px; color: var(--text-secondary);
+  background: var(--surface-1); border: 1px dashed var(--gridline); border-radius: var(--radius);
+}
+.empty strong { display: block; color: var(--text-primary); font-size: 15px; margin-bottom: 4px; }
+
+.link-btn {
+  background: none; border: none; padding: 0; color: var(--brand);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.link-btn:hover { background: none; text-decoration: underline; }
+
+/* ---------------------------------------------------------------- Modals */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(9, 14, 20, 0.55);
+  display: flex; align-items: center; justify-content: center; z-index: 40; padding: 16px;
+  animation: fade-in 160ms ease-out;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--surface-1); border: 1px solid var(--gridline);
+  border-radius: var(--radius-lg); padding: 24px;
+  width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+.modal h2 { margin: 0 0 4px; font-size: 18px; }
+.modal .sub { color: var(--text-secondary); font-size: 13px; margin-bottom: 18px; white-space: pre-line; }
+.modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+.modal-actions button { flex: 1; justify-content: center; }
+.modal.wide { max-width: 480px; }
+.modal.xwide { max-width: 1040px; width: 96vw; }
+.modal-backdrop.hidden { display: none !important; }
+
+/* Toasts replace alert(): a failed save should not block the page while the user
+   reads it, and a successful one should not need dismissing at all. */
+.toast-stack {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 8px; z-index: 60;
+  width: min(92vw, 420px); pointer-events: none;
+}
+.toast {
+  background: var(--surface-1); color: var(--text-primary);
+  border: 1px solid var(--gridline); border-inline-start: 3px solid var(--text-muted);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);
+  padding: 12px 14px; font-size: 14px; pointer-events: auto;
+  display: flex; align-items: flex-start; gap: 10px;
+  animation: toast-in 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+.toast.good { border-inline-start-color: var(--good); }
+.toast.bad { border-inline-start-color: var(--critical); }
+.toast.warning { border-inline-start-color: var(--warning); }
+.toast .toast-text { flex: 1; white-space: pre-line; }
+.toast button { padding: 2px 7px; font-size: 12px; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+#login-view { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.login-card {
+  width: 100%; max-width: 380px; background: var(--surface-1);
+  border: 1px solid var(--gridline); border-radius: var(--radius-lg);
+  padding: 36px 32px; text-align: center; box-shadow: var(--shadow-md);
+}
+.login-card h2 { margin: 0 0 4px; font-size: 22px; }
+.login-card p { color: var(--text-secondary); margin: 0 0 26px; font-size: 14px; }
+
+.bulk-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--brand-soft); border: 1px solid var(--brand);
+  border-radius: var(--radius-sm); padding: 9px 13px; margin-bottom: 10px;
+  font-size: 13px; color: var(--brand-ink);
+}
+.bulk-bar .count { font-weight: 650; }
+

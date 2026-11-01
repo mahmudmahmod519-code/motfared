@@ -1,0 +1,152 @@
+/* tokens.css: colours, radii, shadows, sidebar width. Light is the default; dark is a designed theme, not an inversion
+   Sliced from the original dashboard's stylesheet (backend/public/index.html); test/css-parity.test.ts
+   fails if a declaration here is not the original's, apart from the justified allowlist in that test. */
+
+/* ------------------------------------------------------------------
+   Palette. Anchored to the Android app's brand (BluePrimary #1E5FBF,
+   TealSecondary #12876F, SurfaceDark #10151C) so the phone and the
+   dashboard read as one product rather than two.
+
+   Light is the default because of the use scene: an office, in daylight,
+   read for long stretches. Dark is a real theme, not an inverted one, and
+   is deliberately a blue-tinted ink rather than black - pure black under
+   office light produces harsh halation around Arabic text.
+   ------------------------------------------------------------------ */
+
+:root {
+  color-scheme: light;
+
+  --page: #eef2f8;
+  --surface-1: #ffffff;
+  --surface-2: #f4f7fb;
+  --surface-3: #e6ecf5;
+
+  --text-primary: #0f1720;
+  --text-secondary: #4c5a6c;
+  --text-muted: #78879a;
+
+  --gridline: #dde5ef;
+  --border: rgba(15, 23, 32, 0.10);
+
+  --brand: #1e5fbf;
+  --brand-hover: #1a54a9;
+  --brand-soft: #dfe9fb;
+  --brand-ink: #14407f;
+
+  --teal: #12876f;
+  --teal-soft: #d6efe8;
+  --violet: #5b4bc4;
+  --violet-soft: #e4e0fa;
+
+  --good: #17784a;
+  --good-soft: #d8f0e2;
+  --warning: #a76a00;
+  --warning-soft: #fbeed3;
+  --critical: #c0392b;
+  --critical-soft: #fbdedb;
+
+  /* Aliases the status tiles use. They resolve to brand/teal so the tile bars stay
+     inside the documented palette rather than introducing new hues. */
+  --blue: var(--brand);
+  --aqua: var(--teal);
+  /* A neutral "soft" ground for a badge that is neither good nor bad (e.g. still in
+     time). --text-secondary on it clears 4.5:1 in both themes. */
+  --text-secondary-soft: #e3e8ef;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 32, 0.06), 0 1px 1px rgba(15, 23, 32, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 32, 0.08), 0 1px 3px rgba(15, 23, 32, 0.05);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 32, 0.16), 0 4px 12px rgba(15, 23, 32, 0.08);
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+
+  --sidebar-w: 252px;
+}
+
+/* A user who chose light must stay light even when the system is dark. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Dark, following the system (unless the user chose light). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+      color-scheme: dark;
+
+      --page: #0e131a;
+      --surface-1: #161d27;
+      --surface-2: #1c2531;
+      --surface-3: #243040;
+
+      --text-primary: #eaf0f7;
+      --text-secondary: #a4b2c4;
+      --text-muted: #75849a;
+
+      --gridline: #263141;
+      --border: rgba(234, 240, 247, 0.12);
+
+      --brand: #74a6f5;
+      --brand-hover: #8db8f8;
+      --brand-soft: #1a2c47;
+      --brand-ink: #b9d3fb;
+
+      --teal: #4ecfae;
+      --teal-soft: #14342c;
+      --violet: #a99cf0;
+      --violet-soft: #241f42;
+
+      --good: #4cc98a;
+      --good-soft: #12301f;
+      --warning: #e0a53c;
+      --warning-soft: #33260c;
+      --critical: #f08279;
+      --critical-soft: #3a1c1a;
+
+      --text-secondary-soft: #2a3546;
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+      --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* Dark, chosen by the user. Kept identical to the block above by test/tokens.test.ts. */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --page: #0e131a;
+    --surface-1: #161d27;
+    --surface-2: #1c2531;
+    --surface-3: #243040;
+
+    --text-primary: #eaf0f7;
+    --text-secondary: #a4b2c4;
+    --text-muted: #75849a;
+
+    --gridline: #263141;
+    --border: rgba(234, 240, 247, 0.12);
+
+    --brand: #74a6f5;
+    --brand-hover: #8db8f8;
+    --brand-soft: #1a2c47;
+    --brand-ink: #b9d3fb;
+
+    --teal: #4ecfae;
+    --teal-soft: #14342c;
+    --violet: #a99cf0;
+    --violet-soft: #241f42;
+
+    --good: #4cc98a;
+    --good-soft: #12301f;
+    --warning: #e0a53c;
+    --warning-soft: #33260c;
+    --critical: #f08279;
+    --critical-soft: #3a1c1a;
+
+    --text-secondary-soft: #2a3546;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+}

@@ -1,0 +1,61 @@
+/* base.css: self-hosted font, reset, body, focus ring, scrollbars
+   Sliced from the original dashboard's stylesheet (backend/public/index.html); test/css-parity.test.ts
+   fails if a declaration here is not the original's, apart from the justified allowlist in that test. */
+
+/* IBM Plex Sans Arabic, self-hosted from public/fonts/. Self-hosted rather than
+   pulled from a CDN because the Content-Security-Policy allows fonts from 'self'
+   only - no third party should see a request on every dashboard load.
+
+   swap: text paints immediately in the fallback and re-renders when the face lands,
+   so a slow font never leaves the dashboard blank. */
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  src: url("/fonts/IBMPlexSansArabic-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans Arabic";
+  src: url("/fonts/IBMPlexSansArabic-SemiBold.woff2") format("woff2");
+  font-weight: 600 700;
+  font-display: swap;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  /* Wide tables scroll inside .table-wrap; the page itself never scrolls sideways. */
+  overflow-x: hidden;
+  background: var(--page);
+  color: var(--text-primary);
+  font-family: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  min-height: 100vh;
+  caret-color: var(--brand);
+}
+
+/* Browser chrome the design still owns. */
+::selection { background: var(--brand-soft); color: var(--brand-ink); }
+* { scrollbar-width: thin; scrollbar-color: var(--surface-3) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--surface-3); border-radius: 999px;
+  border: 3px solid var(--page); background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--text-muted); background-clip: padding-box; }
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+h1, h2, h3, h4 { text-wrap: balance; letter-spacing: -0.011em; }
+
+/* Icon buttons carry a visible label for screen readers and touch users. */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
