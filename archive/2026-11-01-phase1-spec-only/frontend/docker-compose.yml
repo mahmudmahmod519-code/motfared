@@ -1,0 +1,16 @@
+services:
+  frontend:
+    build: .
+    container_name: saas-frontend
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3000/api
+    networks:
+      - saas-network
+
+networks:
+  saas-network:
+    driver: bridge

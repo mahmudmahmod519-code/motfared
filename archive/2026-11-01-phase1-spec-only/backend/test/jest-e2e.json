@@ -1,0 +1,18 @@
+/**
+ * Jest Configuration for E2E Tests
+ * Run with: npm run test:e2e
+ */
+
+module.exports = {
+  moduleFileExtensions: ['js', 'json', 'ts'],
+  rootDir: '../src',
+  testRegex: '.*\\.e2e-spec\\.ts$',
+  transform: {
+    '^.+\\.(t|j)s$': 'ts-jest',
+  },
+  coverageDirectory: '../coverage',
+  testEnvironment: 'node',
+  testTimeout: 30000,
+  globalSetup: './test/e2e/global-setup.ts',
+  globalTeardown: './test/e2e/global-teardown.ts',
+};
