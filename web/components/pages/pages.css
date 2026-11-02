@@ -1,0 +1,33 @@
+/* pages.css: rules that belong to single pages (services list, doctors table, stopped rows)
+   Sliced from the original dashboard's stylesheet (backend/public/index.html), like the other files here;
+   test/pages-css-parity.test.ts fails if a declaration here is not the original's.
+   Lives beside the page components and is imported by the pages that use it, so the shared stylesheets in styles/ stay as they are. */
+
+/* The services list: one card, one aligned row per service - name, state, then the same two buttons in the same place. */
+.svc-list { max-width: 720px; overflow: hidden; }
+.svc-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 12px 16px; }
+.svc-row + .svc-row { border-top: 1px solid var(--gridline); }
+.svc-row:hover { background: var(--surface-2); }
+.svc-name { font-weight: 600; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.svc-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.svc-row.off .svc-name span { color: var(--text-muted); }
+.svc-state { background: var(--good-soft); color: var(--good); }
+.svc-row.off .svc-state { background: var(--surface-2); color: var(--text-muted); }
+.svc-actions { display: flex; gap: 8px; }
+.svc-actions button { min-width: 96px; }
+.svc-add { display: flex; gap: 8px; max-width: 720px; margin-bottom: 14px; }
+.svc-add input { flex: 1; }
+@media (max-width: 560px) {
+  .svc-row { grid-template-columns: 1fr auto; }
+  .svc-actions { grid-column: 1 / -1; }
+  .svc-actions button { flex: 1; }
+}
+
+/* The doctors table wraps its cells and packs its actions, so the page never scrolls sideways. */
+.doctors-table th, .doctors-table td { white-space: normal; padding: 10px 12px; font-size: 14.5px; vertical-align: top; }
+.doctors-table .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.doctors-table .actions button { padding: 4px 8px; font-size: 12.5px; margin: 0; }
+.doctors-table .sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.inactive-row td { opacity: 0.55; }
+.inactive-row td .badge { opacity: 1; }
