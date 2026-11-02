@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsEnum, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsObject, IsIn } from 'class-validator';
 import { CompanyStatus } from '../entities/company.entity';
+import { INDUSTRIES } from '../industry/industries';
 
 export class CreateCompanyDto {
   @IsString()
@@ -16,4 +17,6 @@ export class CreateCompanyDto {
   @IsOptional() @IsString() phone_telephone?: string;
   @IsOptional() @IsEnum(CompanyStatus) status?: CompanyStatus;
   @IsOptional() @IsObject() social_links?: Record<string, string>;
+  /** The words/features template (industry/industries.ts); a company's owner changes it through /company-profile. */
+  @IsOptional() @IsIn(INDUSTRIES) industry?: string;
 }

@@ -14,6 +14,7 @@ const EXEMPT: Record<string, string> = {
   MobileAuthController: 'mobile sign-in/sign-out/password change must work in every state; the app needs them to show and resolve a restriction',
   PlansController: 'public price catalogue (writes are platform_admin only)',
   PlanPricesController: 'public price catalogue (writes are platform_admin only)',
+  IndustriesController: 'public list of industry templates (words and features); holds no company data',
 };
 
 describe('Subscription guard coverage', () => {

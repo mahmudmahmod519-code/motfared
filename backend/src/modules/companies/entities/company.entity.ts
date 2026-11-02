@@ -64,6 +64,21 @@ export class Company {
   @Column({ name: 'social_links', type: 'json', nullable: true })
   social_links: Record<string, string>;
 
+  /** The template the company's words and optional features come from (industry/industries.ts). */
+  @Column({ length: 30, default: 'clinic' })
+  industry: string;
+
+  /** The owner's own words, on top of the template. Only overrides are stored; NULL = none. */
+  @Column({ type: 'json', nullable: true })
+  terms: Record<string, string> | null;
+
+  /** The owner's own feature switches, on top of the template. NULL = none. */
+  @Column({ type: 'json', nullable: true })
+  features: Record<string, boolean> | null;
+
+  @Column({ name: 'logo_url', type: 'varchar', length: 1000, nullable: true })
+  logo_url: string | null;
+
   @OneToMany(() => CompanyMembership, (m) => m.company)
   memberships: CompanyMembership[];
 

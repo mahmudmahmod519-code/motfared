@@ -37,7 +37,7 @@ describe('Tenant context', () => {
     it('has one fixed shape for a member (and never leaks credentials)', async () => {
       const me = (await h.get('owner_A', '/auth/me')).body;
       expect(Object.keys(me).sort()).toEqual(
-        ['company_id', 'email', 'entitlement', 'id', 'must_change_password', 'name', 'permissions', 'platform_role', 'role', 'team_id'].sort(),
+        ['company', 'company_id', 'email', 'entitlement', 'id', 'must_change_password', 'name', 'permissions', 'platform_role', 'role', 'team_id'].sort(),
       );
       expect(me).toMatchObject({ id: ids.owner_A, name: 'Owner', company_id: ids.A, role: 'owner', team_id: ids.teamA1, must_change_password: false });
       expect(me.platform_role).toBeNull();
@@ -48,9 +48,9 @@ describe('Tenant context', () => {
     it('has the same shape for a platform admin: no company, no role, no permissions', async () => {
       const me = (await h.get('platform', '/auth/me')).body;
       expect(Object.keys(me).sort()).toEqual(
-        ['company_id', 'email', 'entitlement', 'id', 'must_change_password', 'name', 'permissions', 'platform_role', 'role', 'team_id'].sort(),
+        ['company', 'company_id', 'email', 'entitlement', 'id', 'must_change_password', 'name', 'permissions', 'platform_role', 'role', 'team_id'].sort(),
       );
-      expect(me).toMatchObject({ platform_role: 'platform_admin', company_id: null, role: null, permissions: [] });
+      expect(me).toMatchObject({ platform_role: 'platform_admin', company_id: null, company: null, role: null, permissions: [] });
     });
 
     it('a suspended membership leaves no company, role or permissions at all', async () => {

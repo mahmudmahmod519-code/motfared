@@ -9,6 +9,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { User } from '../users/entities/user.entity';
 import { CompanyMembership } from '../company-memberships/entities/company-membership.entity';
 import { RbacModule } from '../rbac/rbac.module';
+import { CompaniesModule } from '../companies/companies.module';
 import { resolveJwtSecret } from '../../common/config/jwt-secret';
 
 @Module({
@@ -16,6 +17,7 @@ import { resolveJwtSecret } from '../../common/config/jwt-secret';
     TypeOrmModule.forFeature([User, CompanyMembership]),
     PassportModule,
     RbacModule,
+    CompaniesModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

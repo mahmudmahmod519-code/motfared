@@ -20,12 +20,14 @@ import { TenantPrincipal } from '../../common/tenant/tenant-scope';
 import { Throttle } from '@nestjs/throttler';
 import { AllowPasswordChange } from '../../common/decorators/allow-password-change.decorator';
 import { EntitlementService } from '../subscriptions/entitlement.service';
+import { CompanyProfileService } from '../companies/company-profile.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
     private entitlements: EntitlementService,
+    private profiles: CompanyProfileService,
   ) {}
 
   @Post('register')
@@ -61,7 +63,10 @@ export class AuthController {
   async me(@Tenant() user: TenantPrincipal) {
     // Additive field: lets web/mobile refresh the subscription state together with the profile.
     const entitlement = user.company_id ? await this.entitlements.resolve(user.company_id, user.role) : null;
-    return { ...user, entitlement };
+    // Also additive: the company's name, logo, industry words and optional features, so every screen can speak
+    // the company's language without a second request.
+    const company = user.company_id ? await this.profiles.profile(user.company_id) : null;
+    return { ...user, entitlement, company };
   }
 
   @Post('change-password')
