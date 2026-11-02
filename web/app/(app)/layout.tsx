@@ -1,16 +1,24 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { AppShell } from '../../components/shell/AppShell';
 import { NoAccess } from '../../components/shell/NoAccess';
-import { getMe } from '../../lib/api';
+import { getSession } from '../../lib/server-api';
 import { accessFor } from '../../lib/me';
-import { NAV, groupedNav, navFor } from '../../lib/nav';
+import { NAV, groupedNav, localizeNav, navFor } from '../../lib/nav';
 
 export const dynamic = 'force-dynamic'; // the menu depends on who is looking
 
 const READ_ONLY_NOTICE = 'الاشتراك منتهي: تقدر تشوف بيانات الشركة بس. جدّد الاشتراك عشان الفريق يكمّل الشغل.';
 
+/** The browser tab carries the company's own name (white-label). */
+export async function generateMetadata(): Promise<Metadata> {
+  const session = await getSession();
+  const name = session.kind === 'user' ? session.me.company?.name : undefined;
+  return name ? { title: `${name} — لوحة التحكم` } : {};
+}
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = await getMe();
+  const session = await getSession();
   if (session.kind === 'anonymous') redirect('/login');
   if (session.kind === 'must-change') redirect('/change-password');
   if (session.kind === 'error') return <NoAccess kind="error" />;
@@ -21,8 +29,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <AppShell
-      groups={groupedNav(navFor(NAV, me.permissions))}
+      groups={groupedNav(navFor(localizeNav(NAV, me.company), me.permissions))}
       userName={me.name}
+      brandName={me.company?.name || undefined}
+      logoUrl={me.company?.logo_url}
       banner={me.entitlement?.read_only ? READ_ONLY_NOTICE : undefined}
     >
       {children}

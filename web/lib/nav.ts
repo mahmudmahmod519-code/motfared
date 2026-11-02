@@ -3,7 +3,12 @@
  * pages it restricted to admin roles now asking for a permission instead of a role name.
  * The original's "app release" page is not here: publishing the APK is a platform operation in a SaaS.
  * New SaaS pages (billing, settings, platform) are added when they are built, from the same tokens.
+ *
+ * NAV keeps the original's (clinic) titles; localizeNav() puts a company's own words into them and drops the
+ * clinic-only pages a company has switched off.
  */
+import { withAl, type FeatureKey, type Terms } from './terms';
+
 export interface NavItem {
   id: string;
   label: string;
@@ -50,6 +55,38 @@ export const NAV: NavItem[] = [
   item('templates', 'نصوص الرسائل', null),
   item('accounts', 'الحسابات والصلاحيات', null, { permission: 'accounts.manage' }),
 ];
+
+/** Titles built from the company's words; with the clinic words each one is exactly the original title. */
+const TITLES: Partial<Record<string, (t: Terms) => string>> = {
+  leads: (t) => t.clients,
+  worksheet: (t) => `متابعة ${t.clients}`,
+  bookings: (t) => `${t.bookings} والتذكيرات`,
+  'plan-start': (t) => t.plan,
+  reps: (t) => `${t.reps} والأداء`,
+  doctors: (t) => `${t.units} و${t.campaigns}`,
+  'doctor-report': (t) => `تقرير ${withAl(t.unit)}`,
+  services: (t) => t.services,
+};
+
+/** Pages that belong to an optional (clinic-only) feature. */
+const FEATURE_OF: Partial<Record<string, FeatureKey>> = {
+  'plan-start': 'plan_followup',
+  'doctor-report': 'unit_report',
+};
+
+/** The menu in a company's own words, without the optional pages it has switched off. */
+export function localizeNav(nav: NavItem[], company: { terms: Terms; features: Record<FeatureKey, boolean> } | null): NavItem[] {
+  if (!company) return nav;
+  return nav
+    .filter((n) => {
+      const f = FEATURE_OF[n.id];
+      return !f || company.features[f];
+    })
+    .map((n) => {
+      const title = TITLES[n.id];
+      return title ? { ...n, label: title(company.terms) } : n;
+    });
+}
 
 /** The pages a principal may see. Only the permission list counts, never a role name. */
 export function navFor(nav: NavItem[], permissions: readonly string[] | undefined): NavItem[] {

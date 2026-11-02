@@ -6,12 +6,12 @@ import type { Doctor, Team } from '../../../lib/types';
 
 export const dynamic = 'force-dynamic';
 
-const TITLE = 'الدكاترة والكامبينات';
 
 /** #/doctors in the original: clinics, their team and their campaigns, on /api/doctors and /api/teams. */
 export default async function DoctorsPage() {
   const can = await abilities();
   if (!can) return null;
+  const TITLE = `${can.terms.units} و${can.terms.campaigns}`;
   if (!can.has('doctors.manage')) return <EmptyState title={TITLE} message={NO_ACCESS} />;
 
   const [doctors, teams] = await Promise.all([serverGet<Doctor[]>('/doctors'), serverGet<Team[]>('/teams')]);
@@ -19,6 +19,7 @@ export default async function DoctorsPage() {
 
   return (
     <DoctorsView
+      terms={can.terms}
       initial={doctors.data}
       teams={teams.ok ? teams.data : []}
       canManage={can.canWrite}

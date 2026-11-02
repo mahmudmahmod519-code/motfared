@@ -19,6 +19,7 @@ export default async function AccountsPage() {
 
   return (
     <AccountsView
+      terms={can.terms}
       initial={members.data}
       teams={teams.ok ? teams.data : []}
       currentUserId={can.me.id}

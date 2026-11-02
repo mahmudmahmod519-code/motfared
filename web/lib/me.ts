@@ -1,9 +1,21 @@
 /** The session as the API describes it (GET /api/auth/me), and what the dashboard does with it. */
 
+import { readFeatures, readTerms, type Features, type Terms } from './terms';
+
 export interface Entitlement {
   state: string;
   allowed: { read: boolean; write: boolean; billing: boolean; work: boolean };
   read_only: boolean;
+}
+
+/** How the dashboard presents the user's company: its name and logo, and its industry's words and features. */
+export interface CompanyProfile {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  industry: string;
+  terms: Terms;
+  features: Features;
 }
 
 export interface Me {
@@ -17,6 +29,8 @@ export interface Me {
   team_id: number | null;
   must_change_password: boolean;
   entitlement: Entitlement | null;
+  /** Null for a platform admin (no company). */
+  company: CompanyProfile | null;
 }
 
 export type MeResult =
@@ -42,8 +56,23 @@ export function interpretMe(status: number, body: unknown): MeResult {
     team_id: body.team_id ?? null,
     must_change_password: body.must_change_password === true,
     entitlement: isObject(body.entitlement) ? (body.entitlement as unknown as Entitlement) : null,
+    company: readCompany(body.company),
   };
   return me.must_change_password ? { kind: 'must-change', me } : { kind: 'user', me };
+}
+
+/** The company block of /auth/me; missing or malformed words fall back to the original clinic words. */
+export function readCompany(raw: unknown): CompanyProfile | null {
+  if (!isObject(raw) || typeof raw.id !== 'string') return null;
+  return {
+    id: raw.id,
+    name: typeof raw.name === 'string' ? raw.name : '',
+    // only an https address is shown as an image; the API refuses anything else on save as well
+    logo_url: typeof raw.logo_url === 'string' && raw.logo_url.startsWith('https://') ? raw.logo_url : null,
+    industry: typeof raw.industry === 'string' ? raw.industry : 'clinic',
+    terms: readTerms(raw.terms),
+    features: readFeatures(raw.features),
+  };
 }
 
 export type Access = 'dashboard' | 'no-dashboard' | 'platform' | 'blocked';

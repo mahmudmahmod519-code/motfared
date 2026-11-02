@@ -2,18 +2,21 @@
 
 import { useState } from 'react';
 import { ApiError, apiRequest } from '../../lib/http';
+import { withoutAl, type Terms } from '../../lib/terms';
 import type { Membership, Team } from '../../lib/types';
 import { useDialogs, type DialogValues } from '../ui/useDialogs';
 import { useToasts } from '../ui/useToasts';
 
-/** The original's labels; its super admin is the company owner here. A custom role shows its key. */
-export const ROLE_LABELS: Record<string, string> = {
+/**
+ * The original's role labels; its super admin is the company owner here. Sales and team lead use the company's
+ * own words (a kitchen company may call its reps something else). A custom role shows its key.
+ */
+export const roleLabels = (t: Terms): Record<string, string> => ({
   owner: 'سوبر أدمن',
   admin: 'أدمن',
-  team_lead: 'رئيس فريق',
-  sales: 'سيلز',
-};
-const roleLabel = (role: string) => ROLE_LABELS[role] ?? role;
+  team_lead: t.team_lead,
+  sales: t.rep,
+});
 
 const MIN_PASSWORD = 8;
 const STOPPED_BADGE = { background: 'var(--surface-3)', color: 'var(--text-secondary)' };
@@ -30,6 +33,7 @@ const byName = (a: Membership, b: Membership) => (a.user?.name ?? '').localeComp
  * version and last-seen columns wait for their endpoints and are not shown.
  */
 export function AccountsView({
+  terms,
   initial,
   teams,
   currentUserId,
@@ -37,6 +41,7 @@ export function AccountsView({
   canAdmin,
   canWrite,
 }: {
+  terms: Terms;
   initial: Membership[];
   teams: Team[];
   currentUserId: string;
@@ -46,6 +51,8 @@ export function AccountsView({
   canWrite: boolean;
 }) {
   const [members, setMembers] = useState(initial);
+  const labels = roleLabels(terms);
+  const roleLabel = (role: string) => labels[role] ?? role;
   const { toast, toasts } = useToasts();
   const { openDialog, confirmDialog, dialog } = useDialogs();
 
@@ -71,7 +78,7 @@ export function AccountsView({
 
   async function addRep() {
     await openDialog({
-      title: 'سيلز جديد',
+      title: `${terms.rep} جديد`,
       confirmLabel: 'إنشاء',
       fields: [
         { name: 'name', label: 'الاسم', required: true },
@@ -100,8 +107,8 @@ export function AccountsView({
           type: 'select',
           value: 'sales',
           options: [
-            { value: 'sales', label: 'سيلز' },
-            { value: 'team_lead', label: 'رئيس فريق' },
+            { value: 'sales', label: terms.rep },
+            { value: 'team_lead', label: terms.team_lead },
             { value: 'admin', label: 'أدمن' },
           ],
         },
@@ -151,11 +158,11 @@ export function AccountsView({
   return (
     <>
       <section id="accounts-section">
-        <h3>حسابات السيلز</h3>
+        <h3>حسابات {terms.reps}</h3>
         {canAddSales && (
           <div className="toolbar" style={{ marginBottom: 12 }}>
             <button type="button" className="primary" id="add-rep-btn" onClick={addRep}>
-              + سيلز جديد
+              + {terms.rep} جديد
             </button>
           </div>
         )}
@@ -172,7 +179,7 @@ export function AccountsView({
               {reps.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="empty-row">
-                    مفيش حسابات سيلز لسه
+                    مفيش حسابات {withoutAl(terms.reps)} لسه
                   </td>
                 </tr>
               ) : (

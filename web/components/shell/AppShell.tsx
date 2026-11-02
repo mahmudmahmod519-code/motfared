@@ -18,11 +18,17 @@ const isCurrent = (item: NavItem, pathname: string) =>
 export function AppShell({
   groups,
   userName,
+  brandName = 'Lead to Doctor',
+  logoUrl,
   banner,
   children,
 }: {
   groups: NavGroup[];
   userName?: string;
+  /** The company's own name (white-label); the platform's name only when there is none. */
+  brandName?: string;
+  /** The company's logo (https); the original's mark when there is none. */
+  logoUrl?: string | null;
   /** A persistent notice above the page (for example: the subscription has lapsed and the account is read-only). */
   banner?: string;
   children: React.ReactNode;
@@ -44,13 +50,18 @@ export function AppShell({
     <div className="shell">
       <aside className={`sidebar${open ? ' open' : ''}`} id="sidebar">
         <div className="brand">
-          <div className="mark" aria-hidden="true">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" />
-            </svg>
-          </div>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- a company's own logo from any https host, shown at the mark's size
+            <img src={logoUrl} alt="" width={34} height={34} style={{ borderRadius: 'var(--radius-sm)', objectFit: 'contain', flexShrink: 0, background: 'var(--surface-1)' }} />
+          ) : (
+            <div className="mark" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" />
+              </svg>
+            </div>
+          )}
           <div>
-            <div className="name">Lead to Doctor</div>
+            <div className="name">{brandName}</div>
             <div className="who" id="welcome-text">{userName}</div>
           </div>
         </div>

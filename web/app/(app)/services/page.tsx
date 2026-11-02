@@ -11,6 +11,6 @@ export default async function ServicesPage() {
   const can = await abilities();
   if (!can) return null;
   const services = await serverGet<Service[]>('/services');
-  if (!services.ok) return <EmptyState title="الخدمات" message={services.message} />;
-  return <ServicesView initial={services.data} canManage={can.has('services.manage') && can.canWrite} />;
+  if (!services.ok) return <EmptyState title={can.terms.services} message={services.message} />;
+  return <ServicesView terms={can.terms} initial={services.data} canManage={can.has('services.manage') && can.canWrite} />;
 }

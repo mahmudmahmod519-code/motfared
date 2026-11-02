@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { API_URL, getMe } from './api';
 import { errorMessage } from './http';
 import type { Me } from './me';
+import { CLINIC_TERMS, type Terms } from './terms';
 
 /** The session for this render: everything a page asks shares one request to the API. */
 export const getSession = cache(getMe);
@@ -27,6 +28,8 @@ export interface Abilities {
   has: (permission: string) => boolean;
   /** False while the subscription is lapsed (read-only) - every write control is hidden then. */
   canWrite: boolean;
+  /** The company's own words for its pages (the clinic words when the API sends none). */
+  terms: Terms;
 }
 
 export async function abilities(): Promise<Abilities | null> {
@@ -37,5 +40,6 @@ export async function abilities(): Promise<Abilities | null> {
     me: session.me,
     has: (p) => held.has(p),
     canWrite: session.me.entitlement?.allowed.write !== false,
+    terms: session.me.company?.terms ?? CLINIC_TERMS,
   };
 }

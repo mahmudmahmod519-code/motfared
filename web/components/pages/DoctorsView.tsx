@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from 'react';
 import { ApiError, apiRequest } from '../../lib/http';
+import { g, lil, withAl, withoutAl, type Terms } from '../../lib/terms';
 import type { Campaign, Doctor, Team } from '../../lib/types';
 import { useDialogs } from '../ui/useDialogs';
 import { useToasts } from '../ui/useToasts';
@@ -14,11 +15,14 @@ const STOPPED_BADGE = { background: 'var(--surface-3)', color: 'var(--text-secon
  * messages, sheet and clinic-link buttons wait for their endpoints and are not shown.
  */
 export function DoctorsView({
+  terms: t,
   initial,
   teams,
   canManage,
   canMoveTeams,
 }: {
+  /** The company's words: its "doctor" level may be a branch, a project… */
+  terms: Terms;
   initial: Doctor[];
   teams: Team[];
   canManage: boolean;
@@ -31,6 +35,8 @@ export function DoctorsView({
   const { toast, toasts } = useToasts();
   const { openDialog, confirmDialog, promptDialog, dialog } = useDialogs();
 
+  // endings that agree with the company's word for the level (دكتور متوقف، عيادة متوقفة)
+  const gu = (m: string, f: string) => g(t.unit, m, f);
   const teamOptions = teams.map((t) => ({ value: String(t.id), label: t.code }));
   const reload = async () => setDoctors(await apiRequest<Doctor[]>('/doctors'));
 
@@ -44,15 +50,15 @@ export function DoctorsView({
 
   async function addDoctor() {
     await openDialog({
-      title: 'دكتور جديد',
+      title: `${t.unit} ${gu('جديد', 'جديدة')}`,
       confirmLabel: 'إضافة',
       fields: [
-        { name: 'name', label: 'اسم الدكتور', required: true },
+        { name: 'name', label: `اسم ${withAl(t.unit)}`, required: true },
         ...(canMoveTeams && teamOptions.length ? [{ name: 'team', label: 'المجموعة', type: 'select' as const, options: teamOptions }] : []),
       ],
       submit: async (v) => {
         await apiRequest('/doctors', { method: 'POST', body: { name: v.name, ...(v.team && { team_id: Number(v.team) }) } });
-        toast(`اتضاف ${v.name}`, 'good');
+        toast(`${gu('اتضاف', 'اتضافت')} ${v.name}`, 'good');
         await reload();
       },
     });
@@ -60,18 +66,18 @@ export function DoctorsView({
 
   async function editTeam(d: Doctor) {
     const teamId = await promptDialog('تغيير المجموعة', {
-      sub: `${d.name}\nالليدز بتوصل لسيلز المجموعة بس.`,
+      sub: `${d.name}\nالليدز بتوصل ل${withoutAl(t.reps)} المجموعة بس.`,
       label: 'المجموعة',
       options: teamOptions,
       value: d.team_id != null ? String(d.team_id) : '',
       confirmLabel: 'انقل',
     });
     if (teamId === null) return;
-    if (String(d.team_id ?? '') === teamId) return toast('الدكتور في المجموعة دي أصلاً');
+    if (String(d.team_id ?? '') === teamId) return toast(`${withAl(t.unit)} في المجموعة دي أصلاً`);
     const code = teams.find((t) => String(t.id) === teamId)?.code ?? teamId;
     await attempt(async () => {
       await apiRequest(`/doctors/${d.id}`, { method: 'PATCH', body: { team_id: Number(teamId) } });
-      toast(`${d.name} بقى في مجموعة ${code}`, 'good');
+      toast(`${d.name} ${gu('بقى', 'بقت')} في مجموعة ${code}`, 'good');
       await reload();
     });
   }
@@ -101,22 +107,22 @@ export function DoctorsView({
   }
 
   async function addCampaign(d: Doctor) {
-    const name = await promptDialog('كامبين جديد', { label: 'اسم الكامبين', confirmLabel: 'إضافة' });
+    const name = await promptDialog(`${t.campaign} ${g(t.campaign, 'جديد', 'جديدة')}`, { label: `اسم ${withAl(t.campaign)}`, confirmLabel: 'إضافة' });
     if (!name) return;
     await attempt(async () => {
       await apiRequest(`/doctors/${d.id}/campaigns`, { method: 'POST', body: { name } });
-      toast(`اتضاف كامبين ${name}`, 'good');
+      toast(`${g(t.campaign, 'اتضاف', 'اتضافت')} ${t.campaign} ${name}`, 'good');
       setCampaigns(await apiRequest<Campaign[]>(`/doctors/${d.id}/campaigns`));
       await reload();
     });
   }
 
   async function renameCampaign(d: Doctor, c: Campaign) {
-    const name = await promptDialog('تعديل اسم الكامبين', { label: 'الاسم', value: c.name });
+    const name = await promptDialog(`تعديل اسم ${withAl(t.campaign)}`, { label: 'الاسم', value: c.name });
     if (!name || name.trim() === c.name) return;
     await attempt(async () => {
       await apiRequest(`/campaigns/${c.id}`, { method: 'PATCH', body: { name: name.trim() } });
-      toast('اتعدّل اسم الكامبين', 'good');
+      toast(`اتعدّل اسم ${withAl(t.campaign)}`, 'good');
       setCampaigns(await apiRequest<Campaign[]>(`/doctors/${d.id}/campaigns`));
     });
   }
@@ -124,28 +130,32 @@ export function DoctorsView({
   return (
     <section>
       <div className="section-head">
-        <h3>الدكاترة والكامبينات</h3>
+        <h3>
+          {t.units} و{t.campaigns}
+        </h3>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {canManage && (
             <button type="button" id="add-doctor-btn2" onClick={addDoctor}>
-              + دكتور جديد (الاسم بس)
+              + {t.unit} {gu('جديد', 'جديدة')} (الاسم بس)
             </button>
           )}
         </div>
       </div>
-      <p className="hint">كل دكتور بينتمي لمجموعة، وبياخد ليدز من سيلز المجموعة دي بس.</p>
+      <p className="hint">
+        كل {t.unit} بينتمي لمجموعة، وبياخد ليدز من {withoutAl(t.reps)} المجموعة دي بس.
+      </p>
 
       <div id="doctors-list">
         {doctors.length === 0 ? (
           <div className="empty">
-            <strong>مفيش دكاترة لسه</strong>ضيف أول دكتور عشان تقدر ترفع ليدزه.
+            <strong>مفيش {withoutAl(t.units)} لسه</strong>ضيف أول {t.unit} عشان تقدر ترفع ليدزه.
           </div>
         ) : (
           <div className="table-wrap">
             <table className="doctors-table">
               <thead>
                 <tr>
-                  <th style={{ minWidth: 160 }}>الدكتور</th>
+                  <th style={{ minWidth: 160 }}>{withAl(t.unit)}</th>
                   <th>المجموعة</th>
                   <th>الشغل</th>
                   <th style={{ minWidth: 260 }}>الإجراءات</th>
@@ -164,7 +174,7 @@ export function DoctorsView({
                             <>
                               {' '}
                               <span className="badge" style={STOPPED_BADGE}>
-                                متوقف
+                                {gu('متوقف', 'متوقفة')}
                               </span>
                             </>
                           )}
@@ -178,7 +188,9 @@ export function DoctorsView({
                             </button>
                           )}
                         </td>
-                        <td>{d.campaigns_count ?? 0} كامبين</td>
+                        <td>
+                          {d.campaigns_count ?? 0} {t.campaign}
+                        </td>
                         <td>
                           <div className="actions">
                             {off ? (
@@ -190,10 +202,10 @@ export function DoctorsView({
                             ) : (
                               <>
                                 <button type="button" aria-expanded={open} onClick={() => toggleCampaigns(d)}>
-                                  الكامبينات
+                                  {t.campaigns}
                                 </button>
                                 {canManage && (
-                                  <button type="button" title="الدكتور بطّل يشتغل معانا - يختفي من كل مكان ويفضل تاريخه" onClick={() => setActive(d, false)}>
+                                  <button type="button" title={`${withAl(t.unit)} بطّل يشتغل معانا - يختفي من كل مكان ويفضل تاريخه`} onClick={() => setActive(d, false)}>
                                     أوقف
                                   </button>
                                 )}
@@ -205,7 +217,7 @@ export function DoctorsView({
                       {open && (
                         <tr>
                           <td colSpan={4}>
-                            <CampaignList doctor={d} campaigns={campaigns} canManage={canManage} onAdd={() => addCampaign(d)} onRename={(c) => renameCampaign(d, c)} />
+                            <CampaignList terms={t} doctor={d} campaigns={campaigns} canManage={canManage} onAdd={() => addCampaign(d)} onRename={(c) => renameCampaign(d, c)} />
                           </td>
                         </tr>
                       )}
@@ -225,12 +237,14 @@ export function DoctorsView({
 
 /** A doctor's campaigns, unfolded under the row the way the original unfolds a doctor's messages. */
 function CampaignList({
+  terms: t,
   doctor,
   campaigns,
   canManage,
   onAdd,
   onRename,
 }: {
+  terms: Terms;
   doctor: Doctor;
   campaigns: Campaign[] | null;
   canManage: boolean;
@@ -238,11 +252,13 @@ function CampaignList({
   onRename: (c: Campaign) => void;
 }) {
   return (
-    <div className="actions" style={{ flexDirection: 'column', alignItems: 'stretch' }} aria-label={`كامبينات ${doctor.name}`}>
+    <div className="actions" style={{ flexDirection: 'column', alignItems: 'stretch' }} aria-label={`${withoutAl(t.campaigns)} ${doctor.name}`}>
       {campaigns === null ? (
         <span className="sub">بيحمّل…</span>
       ) : campaigns.length === 0 ? (
-        <span className="sub">مفيش كامبينات للدكتور ده لسه.</span>
+        <span className="sub">
+          مفيش {withoutAl(t.campaigns)} {lil(t.unit)} ده لسه.
+        </span>
       ) : (
         campaigns.map((c) => (
           <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -258,7 +274,7 @@ function CampaignList({
       {canManage && (
         <div>
           <button type="button" onClick={onAdd}>
-            + كامبين جديد
+            + {t.campaign} {g(t.campaign, 'جديد', 'جديدة')}
           </button>
         </div>
       )}
