@@ -5,6 +5,8 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  # Deploys run only when started by hand from the Actions tab (see the deploy jobs below)
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '20'
@@ -34,9 +36,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run linting
-        run: npm run lint
-
+      # No lint step yet: ESLint is not installed or configured in this package (the step failed with
+      # "eslint: not found" / "Missing script: lint"). The type check below still runs.
       - name: Type check
         run: npx tsc --noEmit
 
@@ -61,13 +62,14 @@ jobs:
     services:
       mysql:
         image: mysql:8.0
+        # Same database, user and port the integration harness (test/tenant/harness.ts) connects to
         env:
           MYSQL_ROOT_PASSWORD: root_pass
-          MYSQL_DATABASE: saas_crm_test
-          MYSQL_USER: saas_user
-          MYSQL_PASSWORD: saas_pass
+          MYSQL_DATABASE: saas_test
+          MYSQL_USER: saas_test
+          MYSQL_PASSWORD: saas_test
         ports:
-          - 3306:3306
+          - 3307:3306
         options: >-
           --health-cmd="mysqladmin ping -h localhost"
           --health-interval=10s
@@ -91,7 +93,7 @@ jobs:
       - name: Wait for MySQL
         run: |
           for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 -u saas_user -psaas_pass --silent; then
+            if mysqladmin ping -h 127.0.0.1 -P 3307 -u saas_test -psaas_test --silent; then
               echo "MySQL is ready"
               exit 0
             fi
@@ -100,27 +102,13 @@ jobs:
           echo "MySQL failed to start"
           exit 1
 
-      - name: Run migrations
-        run: npm run migration:run
-        env:
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_USERNAME: saas_user
-          DB_PASSWORD: saas_pass
-          DB_DATABASE: saas_crm_test
-          NODE_ENV: test
-
-      - name: Run E2E tests
+      # No separate migration step: the harness wipes the database and the app runs every migration on start,
+      # so each run also proves the migrations build the schema. It sets its own DB user, secrets and NODE_ENV.
+      - name: Run integration tests (real MySQL)
         run: npm run test:tenant
         env:
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_USERNAME: saas_user
-          DB_PASSWORD: saas_pass
-          DB_DATABASE: saas_crm_test
-          NODE_ENV: test
-          JWT_SECRET: test-secret-key-for-ci-only
-          THROTTLE_DISABLED: 'true'
+          TEST_DB_HOST: 127.0.0.1
+          TEST_DB_PORT: 3307
 
   # ===========================================
   # FRONTEND TESTS
@@ -146,20 +134,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run linting
-        run: npm run lint
-
+      # No lint step yet: ESLint is not installed or configured in this package (the step failed with
+      # "eslint: not found" / "Missing script: lint"). The type check below still runs.
       - name: Type check
         run: npx tsc --noEmit
 
+      # `vitest run` never watches; it does not take jest's --ci / --coverage flags
       - name: Run unit tests
-        run: npm run test -- --ci --coverage=false
+        run: npm test
 
       - name: Build application
         run: npm run build
         env:
           NODE_ENV: production
-          NEXT_PUBLIC_API_URL: http://localhost:3000/api
+          API_URL: http://localhost:3000
 
   # ===========================================
   # DOCKER BUILD TEST (verify Dockerfiles work)
@@ -225,7 +213,9 @@ jobs:
     name: Deploy Preview
     runs-on: ubuntu-latest
     needs: [test-backend, test-frontend, docker-build]
-    if: github.event_name == 'pull_request'
+    # Switched off: Railway is not set up yet (RAILWAY_TOKEN secret, preview environments). Remove the `false`
+    # once it is.
+    if: false && github.event_name == 'pull_request'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -246,7 +236,12 @@ jobs:
     name: Deploy Production
     runs-on: ubuntu-latest
     needs: [test-backend, test-frontend, docker-build]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Production changes only when someone starts this workflow by hand on main (Actions → CI → Run workflow),
+    # never on every push: it also runs migrations on the production database. Before the first run: add the
+    # RAILWAY_TOKEN secret, set API_URL on the Railway frontend service, and check railway.json's health check
+    # path (/health is not served by the backend). The `railway` CLI used below is not installed by this job.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    environment: production
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
