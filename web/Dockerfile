@@ -16,9 +16,9 @@ COPY package*.json ./
 # Install ALL dependencies (including devDependencies for build)
 RUN npm ci
 
-# Build argument for API URL (set at build time)
-ARG NEXT_PUBLIC_API_URL=http://backend:3000/api
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# The backend's origin, without /api. Read at build time for the /api proxy (next.config.js rewrites)
+ARG API_URL=http://backend:3000
+ENV API_URL=$API_URL
 
 # Copy source code
 COPY . .
@@ -35,6 +35,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3001
 ENV HOSTNAME=0.0.0.0
+
+# ...and at run time by the pages that read the session on the server (lib/api.ts); without it they would
+# call 127.0.0.1, which inside this container is not the backend
+ARG API_URL=http://backend:3000
+ENV API_URL=$API_URL
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
