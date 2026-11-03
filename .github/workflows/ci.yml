@@ -184,17 +184,20 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # The app refuses to start in production with a JWT_SECRET under 32 characters (a deliberate guard), so the
+      # check uses a random one. With no database it must still boot and keep retrying the connection.
       - name: Test backend image runs
         run: |
-          docker run --rm -d --name backend-test -p 3000:3000 \
+          docker run -d --name backend-test -p 3000:3000 \
             -e NODE_ENV=production \
             -e DB_HOST=invalid \
-            -e JWT_SECRET=test \
+            -e JWT_SECRET="$(openssl rand -hex 32)" \
             saas-crm-backend:test
           sleep 10
-          # Should fail to connect to DB but process should be running
           docker logs backend-test
-          docker stop backend-test
+          status=$(docker inspect -f '{{.State.Status}}' backend-test)
+          docker rm -f backend-test
+          test "$status" = running
 
       - name: Test frontend image runs
         run: |
