@@ -4,7 +4,7 @@ import { AppShell } from '../../components/shell/AppShell';
 import { NoAccess } from '../../components/shell/NoAccess';
 import { getSession } from '../../lib/server-api';
 import { accessFor } from '../../lib/me';
-import { NAV, groupedNav, localizeNav, navFor } from '../../lib/nav';
+import { NAV, SAAS_NAV, groupedNav, localizeNav, navFor } from '../../lib/nav';
 
 export const dynamic = 'force-dynamic'; // the menu depends on who is looking
 
@@ -29,7 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <AppShell
-      groups={groupedNav(navFor(localizeNav(NAV, me.company), me.permissions))}
+      groups={groupedNav(navFor(localizeNav([...NAV, ...SAAS_NAV], me.company), me.permissions))}
       userName={me.name}
       brandName={me.company?.name || undefined}
       logoUrl={me.company?.logo_url}

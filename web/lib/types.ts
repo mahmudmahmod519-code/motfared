@@ -55,3 +55,23 @@ export interface Membership {
     status: UserStatus;
   } | null;
 }
+
+/** GET /api/industries: one industry template. */
+export interface IndustryTemplate {
+  key: string;
+  label: string;
+  terms: import('./terms').Terms;
+  features: import('./terms').Features;
+}
+
+/** GET / PATCH /api/company-profile: what the company shows, and the owner's own overrides on top of its template. */
+export interface CompanyProfileDetails {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  industry: string;
+  industry_label: string;
+  terms: import('./terms').Terms;
+  features: import('./terms').Features;
+  overrides: { terms: Partial<import('./terms').Terms>; features: Partial<import('./terms').Features> };
+}

@@ -3,6 +3,8 @@ node_modules
 
 # Build output
 dist
+# TypeScript's incremental state: with dist excluded, a stale copy makes `nest build` emit nothing
+*.tsbuildinfo
 
 # Git
 .git

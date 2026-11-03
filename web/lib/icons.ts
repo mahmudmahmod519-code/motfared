@@ -3,6 +3,8 @@
  * test/nav.test.ts compares every entry with the original's app.js.
  */
 export const ICONS: Record<string, string> = {
+  // New SaaS pages (not in the original): drawn on the same 24x24 grid and stroke.
+  'company-settings': '<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><circle cx="12" cy="12.5" r="2.5"/><path d="M12 8.5v1.5M12 15v1.5M8 12.5h1.5M14.5 12.5H16"/>',
   overview: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
   leads: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',
   worksheet: '<path d="M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',

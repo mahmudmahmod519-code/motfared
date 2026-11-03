@@ -170,7 +170,9 @@ function Dialog({ title, sub, fields = [], confirmLabel = 'تأكيد', cancelLa
               ) : field.type === 'textarea' ? (
                 <textarea id={id} name={field.name} rows={3} defaultValue={field.value} placeholder={field.placeholder} />
               ) : (
-                <input id={id} name={field.name} type={field.type ?? 'text'} defaultValue={field.value} placeholder={field.placeholder} autoComplete={field.autoComplete} />
+                // The original's stylesheet styles text/tel/password inputs only; an email box is a text input with
+                // the email keyboard, so it looks like every other field.
+                <input id={id} name={field.name} type={field.type === 'email' ? 'text' : field.type ?? 'text'} inputMode={field.type === 'email' ? 'email' : undefined} autoCapitalize={field.type === 'email' ? 'off' : undefined} defaultValue={field.value} placeholder={field.placeholder} autoComplete={field.autoComplete} />
               )}
               {field.hint && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{field.hint}</div>}
             </div>

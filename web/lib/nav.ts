@@ -56,6 +56,14 @@ export const NAV: NavItem[] = [
   item('accounts', 'الحسابات والصلاحيات', null, { permission: 'accounts.manage' }),
 ];
 
+/**
+ * New SaaS pages, listed after the original's menu (NAV stays the original's, item for item). Each continues the
+ * group before it unless it names its own.
+ */
+export const SAAS_NAV: NavItem[] = [
+  item('company-settings', 'إعدادات الشركة', null, { href: '/settings/company', permission: 'settings.manage' }),
+];
+
 /** Titles built from the company's words; with the clinic words each one is exactly the original title. */
 const TITLES: Partial<Record<string, (t: Terms) => string>> = {
   leads: (t) => t.clients,
