@@ -1,0 +1,1907 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lead to Doctor — لوحة التحكم</title>
+<style>
+  /* ------------------------------------------------------------------
+     Palette. Anchored to the Android app's brand (BluePrimary #1E5FBF,
+     TealSecondary #12876F, SurfaceDark #10151C) so the phone and the
+     dashboard read as one product rather than two.
+
+     Light is the default because of the use scene: an office, in daylight,
+     read for long stretches. Dark is a real theme, not an inverted one, and
+     is deliberately a blue-tinted ink rather than black - pure black under
+     office light produces harsh halation around Arabic text.
+     ------------------------------------------------------------------ */
+  :root {
+    color-scheme: light;
+
+    --page: #eef2f8;
+    --surface-1: #ffffff;
+    --surface-2: #f4f7fb;
+    --surface-3: #e6ecf5;
+
+    --text-primary: #0f1720;
+    --text-secondary: #4c5a6c;
+    --text-muted: #78879a;
+
+    --gridline: #dde5ef;
+    --border: rgba(15, 23, 32, 0.10);
+
+    --brand: #1e5fbf;
+    --brand-hover: #1a54a9;
+    --brand-soft: #dfe9fb;
+    --brand-ink: #14407f;
+
+    --teal: #12876f;
+    --teal-soft: #d6efe8;
+    --violet: #5b4bc4;
+    --violet-soft: #e4e0fa;
+
+    --good: #17784a;
+    --good-soft: #d8f0e2;
+    --warning: #a76a00;
+    --warning-soft: #fbeed3;
+    --critical: #c0392b;
+    --critical-soft: #fbdedb;
+
+    /* Aliases the status tiles use. They resolve to brand/teal so the tile bars stay
+       inside the documented palette rather than introducing new hues. */
+    --blue: var(--brand);
+    --aqua: var(--teal);
+    /* A neutral "soft" ground for a badge that is neither good nor bad (e.g. still in
+       time). --text-secondary on it clears 4.5:1 in both themes. */
+    --text-secondary-soft: #e3e8ef;
+
+    --shadow-sm: 0 1px 2px rgba(15, 23, 32, 0.06), 0 1px 1px rgba(15, 23, 32, 0.04);
+    --shadow-md: 0 4px 12px rgba(15, 23, 32, 0.08), 0 1px 3px rgba(15, 23, 32, 0.05);
+    --shadow-lg: 0 16px 40px rgba(15, 23, 32, 0.16), 0 4px 12px rgba(15, 23, 32, 0.08);
+
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 16px;
+
+    --sidebar-w: 252px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+
+      --page: #0e131a;
+      --surface-1: #161d27;
+      --surface-2: #1c2531;
+      --surface-3: #243040;
+
+      --text-primary: #eaf0f7;
+      --text-secondary: #a4b2c4;
+      --text-muted: #75849a;
+
+      --gridline: #263141;
+      --border: rgba(234, 240, 247, 0.12);
+
+      --brand: #74a6f5;
+      --brand-hover: #8db8f8;
+      --brand-soft: #1a2c47;
+      --brand-ink: #b9d3fb;
+
+      --teal: #4ecfae;
+      --teal-soft: #14342c;
+      --violet: #a99cf0;
+      --violet-soft: #241f42;
+
+      --good: #4cc98a;
+      --good-soft: #12301f;
+      --warning: #e0a53c;
+      --warning-soft: #33260c;
+      --critical: #f08279;
+      --critical-soft: #3a1c1a;
+
+      --text-secondary-soft: #2a3546;
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+      --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+    }
+  }
+
+  /* IBM Plex Sans Arabic, self-hosted from public/fonts/. Self-hosted rather than
+     pulled from a CDN because the Content-Security-Policy allows fonts from 'self'
+     only - no third party should see a request on every dashboard load.
+
+     swap: text paints immediately in the fallback and re-renders when the face lands,
+     so a slow font never leaves the dashboard blank. */
+  @font-face {
+    font-family: "IBM Plex Sans Arabic";
+    src: url("/fonts/IBMPlexSansArabic-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "IBM Plex Sans Arabic";
+    src: url("/fonts/IBMPlexSansArabic-SemiBold.woff2") format("woff2");
+    font-weight: 600 700;
+    font-display: swap;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    /* Wide tables scroll inside .table-wrap; the page itself never scrolls sideways. */
+    overflow-x: hidden;
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    min-height: 100vh;
+    caret-color: var(--brand);
+  }
+
+  /* Browser chrome the design still owns. */
+  ::selection { background: var(--brand-soft); color: var(--brand-ink); }
+  * { scrollbar-width: thin; scrollbar-color: var(--surface-3) transparent; }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: var(--surface-3); border-radius: 999px;
+    border: 3px solid var(--page); background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover { background: var(--text-muted); background-clip: padding-box; }
+
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  h1, h2, h3, h4 { text-wrap: balance; letter-spacing: -0.011em; }
+
+  /* ---------------------------------------------------------------- Controls */
+  button {
+    font-family: inherit; font-size: 14px; font-weight: 500;
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--surface-1); color: var(--text-primary);
+    padding: 8px 14px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background 140ms cubic-bezier(0.2, 0, 0, 1), border-color 140ms, color 140ms;
+  }
+  button:hover { background: var(--surface-2); border-color: var(--text-muted); }
+  button:active { background: var(--surface-3); }
+  button.primary { background: var(--brand); color: #fff; border-color: transparent; }
+  button.primary:hover { background: var(--brand-hover); }
+  button.danger { color: var(--critical); }
+  button.danger:hover { background: var(--critical-soft); border-color: var(--critical); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.icon-only { padding: 7px; }
+
+  select, input[type="text"], input[type="search"], input[type="tel"], input[type="password"], input[type="date"], input[type="datetime-local"], textarea {
+    font-family: inherit; font-size: 14px;
+    border-radius: var(--radius-sm); border: 1px solid var(--gridline);
+    background: var(--surface-1); color: var(--text-primary);
+    padding: 8px 12px;
+    transition: border-color 140ms;
+  }
+  select { cursor: pointer; }
+  select:hover, input:hover, textarea:hover { border-color: var(--text-muted); }
+  input::placeholder, textarea::placeholder { color: var(--text-muted); }
+  input:disabled, select:disabled, textarea:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  /* In-page tabs for a view made of several tables: one is shown, the rest wait behind
+     their button rather than below the fold. */
+  .section-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .section-tabs button[aria-selected="true"] { background: var(--brand); color: #fff; border-color: transparent; }
+  .section-tabs button[aria-selected="true"]:hover { background: var(--brand-hover); }
+  .hidden { display: none !important; }
+  .spacer { flex: 1; }
+
+  /* ---------------------------------------------------------------- Login */
+  #login-view { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .login-card {
+    width: 100%; max-width: 380px; background: var(--surface-1);
+    border: 1px solid var(--gridline); border-radius: var(--radius-lg);
+    padding: 36px 32px; text-align: center; box-shadow: var(--shadow-md);
+  }
+  .login-card h2 { margin: 0 0 4px; font-size: 22px; }
+  .login-card p { color: var(--text-secondary); margin: 0 0 26px; font-size: 14px; }
+  .field { text-align: right; margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+  .field input, .field select, .field textarea { width: 100%; padding: 10px 12px; font-size: 15px; }
+  .error { color: var(--critical); font-size: 13px; margin: 8px 0 0; min-height: 16px; }
+
+  /* ---------------------------------------------------------------- App shell */
+  /* Sidebar first, so it lands on the inline-start edge - the right, in this RTL document. */
+  .shell { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
+
+  .sidebar {
+    grid-column: 1;
+    background: var(--surface-1);
+    border-inline-end: 1px solid var(--gridline);
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .sidebar .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 20px 20px 16px;
+  }
+  .sidebar .brand .mark {
+    width: 34px; height: 34px; border-radius: 10px; flex: none;
+    background: var(--brand); color: #fff;
+    display: grid; place-items: center;
+  }
+  .sidebar .brand .name { font-size: 15px; font-weight: 650; line-height: 1.2; }
+  .sidebar .brand .who { font-size: 12px; color: var(--text-secondary); }
+
+  .nav { padding: 4px 12px 20px; display: flex; flex-direction: column; gap: 2px; }
+  .nav-group {
+    font-size: 11px; font-weight: 650; letter-spacing: 0.06em;
+    /* --text-muted lands at 4.46:1 here, just under the floor for 11px text. */
+    color: var(--text-secondary); text-transform: uppercase;
+    padding: 18px 10px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: var(--radius-sm);
+    color: var(--text-secondary); font-size: 14px; font-weight: 500;
+    background: none; border: none; width: 100%; text-align: right; cursor: pointer;
+    transition: background 140ms cubic-bezier(0.2, 0, 0, 1), color 140ms;
+  }
+  .nav-item:hover { background: var(--surface-2); color: var(--text-primary); }
+  .nav-item svg { flex: none; opacity: 0.75; }
+  .nav-item[aria-current="page"] {
+    background: var(--brand-soft); color: var(--brand-ink); font-weight: 600;
+  }
+  .nav-item[aria-current="page"] svg { opacity: 1; }
+  .nav-item .count {
+    margin-inline-start: auto; font-size: 12px; font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    background: var(--critical); color: #fff;
+    border-radius: 999px; padding: 1px 7px; min-width: 20px; text-align: center;
+  }
+
+  .sidebar .foot { margin-top: auto; padding: 12px; border-top: 1px solid var(--gridline); display: grid; gap: 6px; }
+
+  .main { grid-column: 2; min-width: 0; display: flex; flex-direction: column; }
+  /* Opened inside the new dashboard's frame (?embed=1): the page without its own sidebar. */
+  html.embedded .sidebar, html.embedded .menu-btn { display: none; }
+  html.embedded .shell { grid-template-columns: 1fr; }
+  html.embedded .main { grid-column: 1; }
+
+  .topbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 28px; border-bottom: 1px solid var(--gridline);
+    background: var(--surface-1); position: sticky; top: 0; z-index: 5;
+  }
+  .topbar h2 { font-size: 17px; margin: 0; font-weight: 650; }
+  .topbar .crumb { font-size: 13px; color: var(--text-secondary); }
+  .menu-btn { display: none; }
+
+  .content { padding: 24px 28px 64px; max-width: 1240px; width: 100%; }
+
+  /* One authored motion moment: the view arriving after a nav change. */
+  .view { display: none; }
+  .view.active { display: block; animation: view-in 320ms cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes view-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .view.active { animation: none; }
+    * { transition-duration: 1ms !important; }
+  }
+
+  /* ---------------------------------------------------------------- Blocks */
+  section { margin-top: 22px; }
+  section:first-child { margin-top: 0; }
+  section h3 { font-size: 15px; color: var(--text-primary); margin: 0 0 12px; font-weight: 650; }
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .section-head h3 { margin: 0; }
+  .hint { font-size: 13px; color: var(--text-secondary); margin: 0 0 12px; }
+
+  .card {
+    background: var(--surface-1); border: 1px solid var(--gridline);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  }
+
+  /* The services list: one card, one aligned row per service - name, state, then the same two buttons in the same place. */
+  .svc-list { max-width: 720px; overflow: hidden; }
+  .svc-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 12px 16px; }
+  .svc-row + .svc-row { border-top: 1px solid var(--gridline); }
+  .svc-row:hover { background: var(--surface-2); }
+  .svc-name { font-weight: 600; display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .svc-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .svc-row.off .svc-name span { color: var(--text-muted); }
+  .svc-state { background: var(--good-soft); color: var(--good); }
+  .svc-row.off .svc-state { background: var(--surface-2); color: var(--text-muted); }
+  .svc-actions { display: flex; gap: 8px; }
+  .svc-actions button { min-width: 96px; }
+  .svc-add { display: flex; gap: 8px; max-width: 720px; margin-bottom: 14px; }
+  .svc-add input { flex: 1; }
+  @media (max-width: 560px) {
+    .svc-row { grid-template-columns: 1fr auto; }
+    .svc-actions { grid-column: 1 / -1; }
+    .svc-actions button { flex: 1; }
+  }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  /* Chips that wrap: a per-doctor breakdown that would otherwise be a table taking a screen. */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip-row .badge { background: var(--surface-2); color: var(--text-secondary); font-weight: 550; }
+  .chip-row .badge b { color: var(--text-primary); margin-inline-start: 4px; }
+  /* The doctors table wraps its cells and packs its actions, so the page never scrolls sideways. */
+  .doctors-table th, .doctors-table td { white-space: normal; padding: 10px 12px; font-size: 14.5px; vertical-align: top; }
+  .doctors-table .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .doctors-table .actions button { padding: 4px 8px; font-size: 12.5px; margin: 0; }
+  .doctors-table .sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--gridline);
+    border-radius: var(--radius); padding: 16px 18px;
+    position: relative; overflow: hidden; box-shadow: var(--shadow-sm);
+  }
+  .tile .value { font-size: 26px; font-weight: 680; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .tile .label { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .tile .pct { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .tile .bar { position: absolute; inset-inline-start: 0; top: 0; bottom: 0; width: 3px; }
+  /* A tile that opens onto who did how many, for which doctor. */
+  .tile.clickable { cursor: pointer; transition: border-color .15s, transform .15s; }
+  .tile.clickable:hover { border-color: var(--brand); }
+  .tile.selected { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+  .breakdown { margin-top: 12px; padding: 14px 16px; background: var(--surface-1); border: 1px solid var(--gridline); border-radius: var(--radius); }
+  .breakdown h4 { margin: 0 0 10px; font-size: 14px; display: flex; justify-content: space-between; gap: 10px; }
+  .breakdown h4 button { padding: 2px 8px; font-size: 12px; margin: 0; }
+  .breakdown .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .breakdown .head { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .breakdown ul { list-style: none; margin: 0; padding: 0; }
+  .breakdown li { padding: 6px 0; border-bottom: 1px solid var(--gridline); font-size: 13px; }
+  .breakdown li:last-child { border-bottom: 0; }
+  .breakdown li .row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .breakdown li .row b { font-variant-numeric: tabular-nums; }
+  .breakdown li .sub { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .breakdown li .meaning { font-size: 12.5px; color: var(--text-secondary); margin-top: 3px; line-height: 1.5; }
+  /* One search over every lead, in the top bar. */
+  .global-search { position: relative; flex: 0 1 340px; min-width: 150px; }
+  .global-search input { width: 100%; }
+  .global-results { position: absolute; top: calc(100% + 6px); inset-inline: 0; background: var(--surface-1); border: 1px solid var(--gridline); border-radius: var(--radius); box-shadow: var(--shadow-sm); max-height: 60vh; overflow: auto; z-index: 60; }
+  .global-results button { display: block; width: 100%; text-align: start; padding: 8px 12px; margin: 0; background: none; border: 0; border-bottom: 1px solid var(--gridline); border-radius: 0; font: inherit; color: var(--text-primary); cursor: pointer; }
+  .global-results button:last-child { border-bottom: 0; }
+  .global-results button:hover, .global-results button:focus { background: var(--surface-2, rgba(127,127,127,.12)); }
+  .global-results .sub, .global-results .none { font-size: 11.5px; color: var(--text-muted); }
+  .global-results .none { padding: 10px 12px; }
+  .table-filter { width: 220px; }
+  /* what the page is for, folded under its title */
+  .page-help { margin-bottom: 14px; border: 1px solid var(--gridline); border-radius: var(--radius); background: var(--surface-1); font-size: 13px; }
+  .page-help summary { cursor: pointer; padding: 9px 14px; font-weight: 600; color: var(--brand); list-style: none; }
+  .page-help summary::before { content: "؟ "; opacity: .7; }
+  .page-help[open] summary { border-bottom: 1px solid var(--gridline); }
+  .page-help p, .page-help ul { margin: 8px 14px; color: var(--text-secondary); line-height: 1.6; }
+  .page-help ul { padding-inline-start: 18px; }
+  .page-help .learn { color: var(--text-primary); padding-bottom: 4px; }
+  /* The doctor's report: a white page on screen, the same page on paper. */
+  .report-paper { background: #fff; color: #111; border-radius: var(--radius); padding: 28px 32px; box-shadow: var(--shadow-sm); max-width: 900px; margin: 0 auto; font-size: 13.5px; line-height: 1.6; }
+  .report-paper * { color: inherit; }
+  .report-paper h2 { margin: 0 0 4px; font-size: 22px; }
+  .report-paper h3 { margin: 22px 0 8px; font-size: 15px; border-bottom: 2px solid #1e5fbf; padding-bottom: 4px; color: #1e5fbf; }
+  .report-paper .muted { color: #666; font-size: 12px; }
+  .report-paper .brand { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 12px; margin-bottom: 12px; }
+  .report-paper .brand b { font-size: 15px; color: #1e5fbf; }
+  .report-paper .rtiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+  .report-paper .rtile { border: 1px solid #e3e3e3; border-radius: 10px; padding: 10px 12px; background: #fafafa; }
+  .report-paper .rtile .v { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .report-paper .rtile .l { font-size: 12px; color: #555; }
+  .report-paper table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  .report-paper th, .report-paper td { border: 1px solid #e3e3e3; padding: 6px 8px; text-align: start; font-size: 12.5px; background: #fff; }
+  .report-paper th { background: #f3f5f9; font-weight: 600; }
+  .report-paper ul { margin: 6px 0; padding-inline-start: 18px; }
+  .report-paper .ai { white-space: pre-wrap; background: #f6f9ff; border: 1px solid #d6e3ff; border-radius: 10px; padding: 10px 12px; }
+  .report-paper .note { background: #fafafa; border-inline-start: 3px solid #ddd; padding: 4px 8px; margin: 4px 0; font-size: 12px; }
+  @media print {
+    body { background: #fff !important; }
+    .sidebar, .topbar, #scope-filter, .no-print, #loading, .toast, .scrim { display: none !important; }
+    .main, .content { margin: 0 !important; padding: 0 !important; }
+    .view { display: none !important; }
+    #view-doctor-report { display: block !important; }
+    .report-paper { box-shadow: none; padding: 0; max-width: none; }
+    .report-paper h3 { break-after: avoid; }
+    .report-paper table, .report-paper .rtiles { break-inside: avoid; }
+  }
+  @media (max-width: 720px) { .global-search { flex-basis: 100%; order: 9; } }
+
+  .upload-panel {
+    background: var(--surface-1); border: 1px solid var(--gridline);
+    border-radius: var(--radius); padding: 18px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; box-shadow: var(--shadow-sm);
+  }
+  .upload-summary { margin-top: 12px; font-size: 13px; }
+  .upload-summary .row { display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
+  .upload-summary .stat { display: flex; align-items: center; gap: 6px; }
+  .upload-summary .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .rejected-list { max-height: 180px; overflow-y: auto; border-top: 1px solid var(--gridline); margin-top: 8px; padding-top: 8px; }
+  .rejected-list div { padding: 3px 0; color: var(--text-secondary); }
+
+  /* The wrapper is the scroll container in both axes: a sticky header only sticks
+     relative to the element that scrolls, so an overflow-x-only wrapper inside a
+     scrolling page never pinned anything. Capped to the viewport so long pages scroll
+     the rows under a header that stays put. */
+  .table-wrap {
+    overflow: auto; max-height: min(78vh, 900px);
+    border-radius: var(--radius); border: 1px solid var(--gridline); box-shadow: var(--shadow-sm);
+    background: var(--surface-1);
+  }
+  .table-wrap th { z-index: 1; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface-1); }
+  .table-wrap table { border: none; }
+  /* Cells wrap rather than stretch the table: a page is read top to bottom, and a table
+     that needs a sideways scroll to reach its buttons is a table nobody reads (the owner,
+     2026-09-15). Numbers, phones and dates stay on one line; words break where they can. */
+  th, td { padding: 10px 12px; text-align: right; font-size: 14px; border-bottom: 1px solid var(--gridline); white-space: normal; vertical-align: middle; }
+  td[dir="ltr"], td.nowrap, th.nowrap { white-space: nowrap; }
+  /* The worksheet mirrors a 24-column Google sheet: it keeps its own sideways scroll. */
+  #worksheet-table th, #worksheet-table td { white-space: nowrap; }
+  td button { margin: 2px 0; }
+  /* Muted and a size step down from body text, not uppercase or tracked - Arabic
+     letterforms connect to their neighbours, so the usual Latin all-caps + tracking
+     header treatment breaks the joins instead of reading as refined. The inset shadow
+     gives the sticky header a defined edge without a second visible border. */
+  th {
+    color: var(--text-muted); font-weight: 650; font-size: 14px;
+    background: var(--surface-2); position: sticky; top: 0;
+    box-shadow: inset 0 -1px 0 var(--gridline);
+  }
+  td { font-variant-numeric: tabular-nums; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background 120ms; }
+  /* A faint stripe on every other row carries the eye across wide tables without
+     competing with the stronger tone reserved for hover and the brand tint for selection. */
+  tbody tr:nth-child(even) { background: var(--surface-2); }
+  tbody tr:hover, tbody tr:nth-child(even):hover { background: var(--surface-3); }
+  td button { padding: 4px 8px; font-size: 12.5px; }
+
+  .empty-row { padding: 40px 16px !important; text-align: center; color: var(--text-muted); font-size: 13.5px; white-space: normal; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+
+  .pager {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 12px 2px; font-size: 13px; color: var(--text-secondary);
+  }
+  .pager .spacer { flex: 1; }
+  .pager button { padding: 6px 12px; }
+
+  .empty {
+    text-align: center; padding: 44px 20px; color: var(--text-secondary);
+    background: var(--surface-1); border: 1px dashed var(--gridline); border-radius: var(--radius);
+  }
+  .empty strong { display: block; color: var(--text-primary); font-size: 15px; margin-bottom: 4px; }
+
+  #loading { text-align: center; padding: 80px 0; color: var(--text-secondary); }
+
+  /* Overview: the actionable column sits beside the numbers, not under them. */
+  .overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; align-items: start; }
+  .action-card { background: var(--surface-1); border: 1px solid var(--gridline); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+  .action-card > header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 16px; border-bottom: 1px solid var(--gridline);
+    font-weight: 650; font-size: 14px;
+  }
+  .action-card > header .n {
+    margin-inline-start: auto; font-variant-numeric: tabular-nums;
+    font-size: 13px; padding: 1px 9px; border-radius: 999px;
+    background: var(--surface-3); color: var(--text-secondary);
+  }
+  .action-card > header .n.alert { background: var(--critical-soft); color: var(--critical); }
+  .action-list { max-height: 230px; overflow-y: auto; }
+  .action-list .row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; border-bottom: 1px solid var(--gridline); font-size: 13px;
+  }
+  .action-list .row:last-child { border-bottom: none; }
+  .action-list .row .who { font-weight: 550; }
+  .action-list .row .meta { color: var(--text-secondary); margin-inline-start: auto; font-variant-numeric: tabular-nums; }
+  .action-card > footer { padding: 10px 16px; border-top: 1px solid var(--gridline); background: var(--surface-2); }
+  /* What the card counts and what to do about it, in a line under its title (owner, 2026-09-29). */
+  .action-card > .card-help { padding: 8px 16px 6px; font-size: 12px; line-height: 1.5; color: var(--text-secondary); border-bottom: 1px solid var(--gridline); }
+  .action-list .row .parts { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-inline-start: auto; justify-content: flex-end; }
+  .action-list .row .parts .link-btn { font-size: 12.5px; padding: 0; }
+  .breakdown .help { font-size: 12.5px; color: var(--text-secondary); margin: -4px 0 10px; line-height: 1.55; }
+  .link-btn {
+    background: none; border: none; padding: 0; color: var(--brand);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .link-btn:hover { background: none; text-decoration: underline; }
+
+  /* ---------------------------------------------------------------- Modals */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(9, 14, 20, 0.55);
+    display: flex; align-items: center; justify-content: center; z-index: 40; padding: 16px;
+    animation: fade-in 160ms ease-out;
+  }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: var(--surface-1); border: 1px solid var(--gridline);
+    border-radius: var(--radius-lg); padding: 24px;
+    width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal h2 { margin: 0 0 4px; font-size: 18px; }
+  .modal .sub { color: var(--text-secondary); font-size: 13px; margin-bottom: 18px; white-space: pre-line; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+  .modal-actions button { flex: 1; justify-content: center; }
+  .modal.wide { max-width: 480px; }
+  .modal.xwide { max-width: 1040px; width: 96vw; }
+  .modal-backdrop.hidden { display: none !important; }
+
+  /* ---------------------------------------------------------------- Doctor onboarding */
+  .modal.onboard { padding: 0; display: flex; flex-direction: column; height: 88vh; max-height: 88vh; overflow: hidden; }
+  .onboard .ob-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 18px 22px 14px; border-bottom: 1px solid var(--gridline); }
+  .onboard .ob-close { border: none; background: none; font-size: 18px; padding: 4px 8px; }
+  .onboard .ob-progress { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 12.5px; color: var(--text-secondary); }
+  .onboard .ob-bar { width: 180px; height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+  .onboard .ob-bar span { display: block; height: 100%; background: var(--brand); transition: width 300ms ease; }
+  .onboard .ob-body { flex: 1; display: grid; grid-template-columns: 250px 1fr; min-height: 0; }
+  .onboard .ob-steps { border-inline-end: 1px solid var(--gridline); padding: 10px; overflow-y: auto; background: var(--surface-2); display: flex; flex-direction: column; gap: 4px; }
+  .onboard .ob-step { display: flex; gap: 10px; align-items: flex-start; text-align: start; width: 100%; border: 1px solid transparent; background: none; padding: 9px 10px; border-radius: var(--radius); justify-content: flex-start; }
+  .onboard .ob-step:hover:not(:disabled) { background: var(--surface-1); }
+  .onboard .ob-step.current { background: var(--surface-1); border-color: var(--brand); }
+  .onboard .ob-step:disabled { opacity: 0.45; }
+  .onboard .ob-step-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .onboard .ob-step-label { font-weight: 600; font-size: 13.5px; }
+  .onboard .ob-step-label em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--warning); background: var(--warning-soft); padding: 1px 6px; border-radius: 8px; }
+  .onboard .ob-step-detail { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+  .onboard .ob-icon { flex: none; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; background: var(--surface-3); color: var(--text-secondary); }
+  .onboard .ob-icon.done { background: var(--good, #1f9d55); color: #fff; }
+  .onboard .ob-icon.warn { background: var(--warning-soft); color: var(--warning); }
+  .onboard .ob-icon.missing { background: var(--warning-soft); color: var(--warning); }
+  .onboard .ob-main { padding: 18px 22px; overflow-y: auto; min-width: 0; }
+  .onboard .ob-step-head h3 { margin: 0 0 4px; font-size: 17px; }
+  .onboard .ob-why { margin: 0 0 16px; color: var(--text-secondary); font-size: 13px; }
+  .onboard .ob-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 12px; background: var(--surface-2); border-radius: var(--radius); }
+  .onboard .ob-hint { color: var(--text-secondary); font-size: 12.5px; }
+  .onboard .ob-form { display: grid; gap: 12px; max-width: 360px; }
+  .onboard .ob-form label { display: grid; gap: 4px; font-size: 13px; }
+  .onboard .ob-facts { display: grid; gap: 8px; max-width: 360px; margin-bottom: 10px; }
+  .onboard .ob-facts div { display: flex; justify-content: space-between; padding: 8px 12px; background: var(--surface-2); border-radius: var(--radius); }
+  .onboard .ob-facts span { color: var(--text-secondary); }
+  .onboard .ob-reps { width: 100%; }
+  .onboard .ob-reps tr.linked td { background: var(--brand-soft, var(--surface-2)); }
+  .onboard .ob-chip { display: inline-block; font-size: 11.5px; padding: 2px 7px; margin: 1px 0; border-radius: 10px; background: var(--surface-3); }
+  .onboard .ob-chip.this { background: var(--brand); color: #fff; }
+  .onboard .ob-summary { padding: 12px 14px; border-radius: var(--radius); font-weight: 600; margin-bottom: 12px; }
+  .onboard .ob-summary.ok { background: var(--good-soft, #e3f6ea); color: var(--good, #1f9d55); }
+  .onboard .ob-summary.missing { background: var(--warning-soft); color: var(--warning); }
+  .onboard .ob-review-row { display: flex; align-items: center; gap: 12px; padding: 10px 4px; border-bottom: 1px solid var(--gridline); }
+  .onboard .ob-review-row > div { flex: 1; }
+  .onboard .ob-foot { display: flex; align-items: center; gap: 12px; padding: 12px 22px; border-top: 1px solid var(--gridline); }
+  .onboard .ob-foot-note { flex: 1; text-align: center; font-size: 12.5px; color: var(--text-secondary); }
+  .ob-row-btn.missing { color: var(--warning); border-color: var(--warning); background: var(--warning-soft); }
+  .ob-row-btn.partial { color: var(--brand); border-color: var(--brand); }
+  .ob-row-btn.done { color: var(--text-secondary); }
+  @media (max-width: 720px) {
+    .modal.onboard { height: 94vh; max-height: 94vh; }
+    .onboard .ob-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .onboard .ob-steps { flex-direction: row; overflow-x: auto; border-inline-end: none; border-bottom: 1px solid var(--gridline); }
+    .onboard .ob-step { width: auto; flex: none; }
+    .onboard .ob-step-detail { display: none; }
+  }
+
+  /* Inline undo: a toast with an action button that reverts the last change. */
+  .toast .undo-btn { font-weight: 600; color: var(--brand); border-color: var(--brand); }
+
+  /* The pool card: doctors with leads waiting and nobody linked to pull them. */
+  tbody tr.warn-row, tbody tr.warn-row:nth-child(even) { background: var(--warning-soft); }
+  tbody tr.warn-row:hover { background: var(--warning-soft); }
+  .inactive-row td { opacity: 0.55; }
+  .inactive-row td .badge { opacity: 1; }
+
+  #loading button { margin-top: 12px; }
+  .load-error { color: var(--critical); }
+
+  /* Icon buttons carry a visible label for screen readers and touch users. */
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* Toasts replace alert(): a failed save should not block the page while the user
+     reads it, and a successful one should not need dismissing at all. */
+  .toast-stack {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; gap: 8px; z-index: 60;
+    width: min(92vw, 420px); pointer-events: none;
+  }
+  .toast {
+    background: var(--surface-1); color: var(--text-primary);
+    border: 1px solid var(--gridline); border-inline-start: 3px solid var(--text-muted);
+    border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);
+    padding: 12px 14px; font-size: 14px; pointer-events: auto;
+    display: flex; align-items: flex-start; gap: 10px;
+    animation: toast-in 200ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .toast.good { border-inline-start-color: var(--good); }
+  .toast.bad { border-inline-start-color: var(--critical); }
+  .toast.warning { border-inline-start-color: var(--warning); }
+  .toast .toast-text { flex: 1; white-space: pre-line; }
+  .toast button { padding: 2px 7px; font-size: 12px; }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  /* Bulk selection: a checkbox column plus a bar that appears only once something
+     is picked, so the table reads exactly as before until it is being used. */
+  .sel-cell { width: 1px; padding-inline-end: 0; }
+  .sel-cell input { cursor: pointer; width: 15px; height: 15px; accent-color: var(--brand); }
+  tbody tr.selected { background: var(--brand-soft); }
+  .bulk-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--brand-soft); border: 1px solid var(--brand);
+    border-radius: var(--radius-sm); padding: 9px 13px; margin-bottom: 10px;
+    font-size: 13px; color: var(--brand-ink);
+  }
+  .bulk-bar .count { font-weight: 650; }
+
+  /* ---------------------------------------------------------------- Responsive */
+  @media (max-width: 1000px) {
+    .overview-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidebar {
+      grid-column: 1;
+      position: fixed; inset-block: 0; right: 0; left: auto; width: min(84vw, var(--sidebar-w));
+      z-index: 30; transform: translateX(100%); box-shadow: var(--shadow-lg);
+      transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    /* An explicit 0 rather than `none`: it interpolates cleanly from translateX(100%). */
+    .sidebar.open { transform: translateX(0); }
+    .main { grid-column: 1; }
+    .menu-btn { display: inline-flex; }
+    .content { padding: 20px 16px 64px; }
+    .topbar { padding: 12px 16px; }
+    .scrim {
+      position: fixed; inset: 0; background: rgba(9, 14, 20, 0.5); z-index: 25;
+      animation: fade-in 160ms ease-out;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="login-view">
+  <div class="login-card">
+    <h2>Lead to Doctor</h2>
+    <p>لوحة تحكم المديرين</p>
+    <div class="field">
+      <label for="login-phone">رقم التليفون</label>
+      <input id="login-phone" type="tel" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label for="login-password">كلمة المرور</label>
+      <input id="login-password" type="password" autocomplete="current-password" />
+    </div>
+    <button class="primary" style="width:100%" id="login-btn">دخول</button>
+    <p class="error" id="login-error"></p>
+  </div>
+</div>
+
+<div id="dashboard-view" class="hidden">
+  <div class="shell">
+
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" />
+          </svg>
+        </div>
+        <div>
+          <div class="name">Lead to Doctor</div>
+          <div class="who" id="welcome-text"></div>
+        </div>
+      </div>
+
+      <nav class="nav" id="nav"></nav>
+
+      <div class="foot">
+        <button id="my-password-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          غيّر كلمة السر
+        </button>
+        <button id="logout-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+          خروج
+        </button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <button class="menu-btn icon-only" id="menu-btn" aria-label="القائمة">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <h2 id="page-title">نظرة عامة</h2>
+        <div class="spacer"></div>
+        <div class="global-search" id="global-search">
+          <input type="search" id="global-q" placeholder="دوّر على أي ليد: الاسم / اسم الحالة / الرقم" autocomplete="off" aria-label="بحث في كل الليدز" />
+          <div class="global-results hidden" id="global-results" role="listbox"></div>
+        </div>
+        <button id="notify-btn" title="إشعار على الجهاز ده لما موظف يدوس «مفيش شغل»">🔔 إشعارات</button>
+        <button id="refresh-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+          تحديث
+        </button>
+      </div>
+
+      <div id="loading">جاري تحميل البيانات...</div>
+
+      <div class="content hidden" id="content">
+
+      <div class="toolbar" id="scope-filter" style="margin-bottom:20px">
+        <select id="doctor-filter"><option value="">كل الدكاترة</option></select>
+        <select id="campaign-filter" class="hidden"><option value="">كل الكامبينات</option></select>
+        <select id="rep-filter"><option value="">كل السيلز</option></select>
+        <span style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-secondary)">
+          من
+          <input type="date" id="scope-from-date" style="width:auto" />
+          لـ
+          <input type="date" id="scope-to-date" style="width:auto" />
+        </span>
+        <button id="scope-date-clear" class="hidden" title="امسح فلتر التاريخ">✕ التاريخ</button>
+      </div>
+
+      <div class="view" id="view-overview">
+      <section class="hidden" id="doctor-profile-section">
+        <h3>بيانات العيادة</h3>
+        <div id="doctor-profile-card"></div>
+      </section>
+      <section>
+        <h3 id="arrivals-title">ليدز جديدة دخلت السيستم النهاردة</h3>
+        <div id="arrivals-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:10px">
+          ليدز جديدة بس، بتاريخ دخولها - مش الليدز اللي اتعمل عليها شغل. غيّر "من / لـ" فوق عشان تشوف فترة.
+        </div>
+        <div class="tiles" id="arrivals-tiles"></div>
+        <div class="chip-row hidden" id="arrivals-doctors"></div>
+        <div class="breakdown hidden" id="arrivals-detail"></div>
+      </section>
+      <section>
+        <h3 id="activity-title">الحجوزات والكشوفات النهاردة</h3>
+        <div id="activity-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:10px">
+          الحجوزات بيوم ما اتعملت، والكشوفات بيوم الميعاد نفسه. بتتبع نفس الفلاتر فوق: المدة والدكتور والسيلز. اضغط على أي رقم يوريك مين عمل كام، ولأنهي دكتور.
+        </div>
+        <div class="tiles" id="activity-tiles"></div>
+        <div class="breakdown hidden" id="activity-detail"></div>
+      </section>
+      <section>
+        <h3 id="outcomes-title">نتايج المكالمات النهاردة</h3>
+        <div id="outcomes-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:10px"></div>
+        <div class="tiles" id="outcomes-tiles"></div>
+        <div class="breakdown hidden" id="outcomes-detail"></div>
+      </section>
+      <section>
+        <h3>النهاردة</h3>
+        <div class="tiles" id="today-tiles"></div>
+      </section>
+      <section>
+        <div class="overview-grid">
+          <div class="action-card">
+            <header>
+              ⚠ تحذيرات — عندهم شغل ومش شغالين
+              <span class="n alert" id="ov-warnings-n">0</span>
+            </header>
+            <p class="card-help">موظف عليه شغل مستني النهارده (ليدز مكلمهاش، متابعات، تذكيرات…)، وعمل أقل من 20 مكالمة، ومداسش «مفيش شغل». المطلوب: تكلّمه أو تشوف سبب التأخير.</p>
+            <div class="action-list" id="ov-warnings"></div>
+            <footer><button class="link-btn" data-goto="attendance">الحضور ودوسات «مفيش شغل» ←</button></footer>
+          </div>
+          <div class="action-card">
+            <header>
+              ما اشتغلوش أو شغلهم قليل
+              <span class="n" id="ov-low-n">0</span>
+            </header>
+            <p class="card-help">كل موظف عمل أقل من 20 مكالمة صادرة على خط الشغل النهارده، وكام مرة داس «مفيش شغل». المكالمات بتتعد من سجل الموبايل نفسه.</p>
+            <div class="action-list" id="ov-low"></div>
+            <footer><button class="link-btn" data-goto="calls">سجل المكالمات ←</button></footer>
+          </div>
+          <div class="action-card">
+            <header>
+              الشغل المتراكم
+              <span class="n" id="ov-backlog-n">0</span>
+            </header>
+            <p class="card-help">اللي مستني على كل موظف دلوقتي وبيمنع «مفيش شغل»: ليدز محدش كلّمها، مردّش امبارح، متابعات فات وقتها، مكالمات تذكير، رسايل التأكيد، وزيارات محتاجة تسجيل. دوس على أي رقم يفتحلك الليدز نفسها.</p>
+            <div class="action-list" id="ov-backlog"></div>
+            <footer><button class="link-btn" data-goto="workload/followups">تفاصيل الشغل المستني ←</button></footer>
+          </div>
+            <div class="action-card">
+              <header>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                تأكيد الحجوزات — النهاردة وبكرة
+                <span class="n" id="ov-reminders-n">0</span>
+              </header>
+              <p class="card-help">كل حجز ميعاده النهارده أو بكرة، وإيه اللي حصل في مكالمة التذكير: أكّد، مردّش (وكام مرة)، اتأجل، أو لسه متعملتش. الرقم فوق = اللي لسه مأكّدش. «الرسالة» = رسالة التأكيد اتبعتت واتساب.</p>
+              <div class="action-list" id="ov-reminders"></div>
+              <footer><button class="link-btn" data-goto="bookings">كل الحجوزات ←</button></footer>
+            </div>
+
+            <div class="action-card">
+              <header>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--critical)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                متابعات فات وقتها
+                <span class="n alert" id="ov-overdue-n">0</span>
+              </header>
+              <p class="card-help">ليدز الموظف وعد يكلّمها في ميعاد معيّن والميعاد عدّى ومكلمهاش. المطلوب: يكلّمها أو تنقلها لحد فاضي.</p>
+              <div class="action-list" id="ov-overdue"></div>
+              <footer><button class="link-btn" data-goto="overdue">كل المتأخرين ←</button></footer>
+            </div>
+
+            <div class="action-card">
+              <header>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--critical)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg>
+                أكّدوا ومحضروش
+                <span class="n alert" id="ov-noshow-n">0</span>
+              </header>
+              <p class="card-help">عملاء أكّدوا في مكالمة التذكير وبعدين اتسجل عليهم «مجاش». آخر 7 أيام لو الفلتر فاضي، أو المدة المختارة. جنب كل واحد: اتحجز تاني، أو ميعاد مكالمة تاني يوم اللي السيستم حطها للموظف.</p>
+              <div class="action-list" id="ov-noshow"></div>
+              <footer><button class="link-btn" data-goto="bookings">كل الحجوزات ←</button></footer>
+            </div>
+
+            <div class="action-card">
+              <header>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>
+                الحجوزات بالخدمة
+                <span class="n" id="ov-services-n">0</span>
+              </header>
+              <p class="card-help">حجوزات المدة مقسومة على الخدمة (تقويم، زراعة، تبييض…): كام حجز اتعمل، كام ميعاد كشف في المدة، وكام منهم اتكشف فعلاً. الخدمة بتاعة الحجز، ولو مفيش فبتاعة الليد.</p>
+              <div class="action-list" id="ov-services"></div>
+              <footer><button class="link-btn" data-goto="bookings">كل الحجوزات ←</button></footer>
+            </div>
+
+            <div class="action-card">
+              <header>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+                شيتات مربوطة ومش داخل منها ليدز
+                <span class="n alert" id="ov-sheets-n">0</span>
+              </header>
+              <p class="card-help">كل شيت جوجل مربوط بدكتور ومجاش منه ولا ليد في آخر 7 أيام، أو موقوف، أو آخر قراءة ليه فيها خطأ. يعني يا الإعلان واقف، يا الشيت اتغيّر، يا اللينك محتاج يتربط تاني.</p>
+              <div class="action-list" id="ov-sheets"></div>
+              <footer><button class="link-btn" data-goto="doctors">الدكاترة والكامبينات ←</button></footer>
+            </div>
+
+            <div class="action-card">
+              <header>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5h11M10 12h11M10 19h11"/><path d="m3 5 1.6 1.6L7.2 4"/><path d="m3 12 1.6 1.6L7.2 11"/><path d="m3 19 1.6 1.6L7.2 18"/></svg>
+                الشغل المستني
+                <span class="n" id="ov-followups-n">0</span>
+              </header>
+              <p class="card-help">نفس الأربع تابات اللي على موبايل كل موظف: متابعة لاحقة، الحجوزات، محدش كلّمها، وكشف ولسه مبدأش — وكام واحد في كل واحدة. اللي عليه «محدش كلمها» بيطلع الأول.</p>
+              <div class="action-list" id="ov-followups"></div>
+              <footer><button class="link-btn" data-goto="workload/followups">تفاصيل الشغل المستني ←</button></footer>
+            </div>
+
+            <div class="action-card">
+              <header>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+                دكاترة من غير سيلز
+                <span class="n" id="ov-unlinked-n">0</span>
+              </header>
+              <p class="card-help">دكتور شغال ومفيش ولا موظف مربوط بيه (أساسي أو احتياطي): ليدزه بتقعد في المخزون ومحدش يقدر يسحبها لحد ما تربطه من التوزيع والربط.</p>
+              <div class="action-list" id="ov-unlinked"></div>
+              <footer><button class="link-btn" data-goto="distribution">اظبط الربط ←</button></footer>
+            </div>
+
+            <div class="action-card">
+              <header>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8V21H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+                مخزون الدكاترة
+                <span class="n" id="ov-pool-n">0</span>
+              </header>
+              <p class="card-help">ليدز كل دكتور اللي لسه محدش سحبها (جديد أو لم يرد ورجعت). لو الرقم بيكبر والدكتور ليه موظفين، يبقى مش بيسحبوا.</p>
+              <div class="action-list" id="ov-pool"></div>
+              <footer><button class="link-btn" data-goto="workload/pool">تفاصيل المخزون ←</button></footer>
+            </div>
+
+          </div>
+        </section>
+      </div>
+
+      <div class="view" id="view-leads">
+      <section>
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px">
+          <h3 style="margin:0">قايمة العملاء</h3>
+          <div class="toolbar" style="gap:8px">
+            <label for="leads-search" class="sr-only">بحث في العملاء</label>
+            <input type="search" id="leads-search" placeholder="ابحث بالاسم أو اسم الحالة أو الرقم" style="width:220px" />
+            <label for="leads-source" class="sr-only">مصدر العميل</label>
+            <select id="leads-source" title="من فين جه العميل">
+              <option value="">كل المصادر</option>
+              <option value="link">من لينك الدكتور بس</option>
+              <option value="import">من الاستيراد بس</option>
+            </select>
+            <button id="add-lead-btn" class="hidden">+ عميل جديد</button>
+            <button id="delete-todays-leads-btn" class="hidden">🗑 امسح ليدز النهاردة</button>
+            <button id="export-btn">⭳ تصدير Excel</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="leads-table">
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>التليفون</th>
+                <th>واتساب</th>
+                <th>الحالة</th>
+                <th>الموظف</th>
+                <th>الدكتور</th>
+                <th>الكامبين</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="leads-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+
+      <div class="view" id="view-worksheet">
+        <section>
+          <div class="section-head">
+            <h3>متابعة العملاء</h3>
+            <div class="toolbar" style="gap:8px">
+              <label for="worksheet-search" class="sr-only">بحث في متابعة العملاء</label>
+              <input type="search" id="worksheet-search" placeholder="ابحث بالاسم أو الرقم أو أي كلمة" style="width:260px" />
+              <button id="worksheet-export-btn">⭳ تصدير Excel</button>
+            </div>
+          </div>
+          <p class="hint">
+            كل عمود هنا بيتحسب لوحده من مكالمات التطبيق والحجوزات — محدش بيكتب فيه حاجة.
+            بيتبع فلتر الدكتور والكامبين اللي فوق.
+          </p>
+          <div id="worksheet-note" style="font-size:13px; color:var(--text-secondary); margin-bottom:12px"></div>
+          <div class="table-wrap">
+            <table id="worksheet-table">
+              <thead>
+                <tr>
+                  <th>الاسم</th>
+                  <th>واتساب</th>
+                  <th>التليفون</th>
+                  <th>المصدر</th>
+                  <th>الخدمة</th>
+                  <th>اتصلنا؟</th>
+                  <th>رد؟</th>
+                  <th>محاولة ١</th>
+                  <th>محاولة ٢</th>
+                  <th>محاولة ٣</th>
+                  <th>محاولة ٤</th>
+                  <th>واتساب</th>
+                  <th>آخر اتصال</th>
+                  <th>اتجاه آخر مكالمة</th>
+                  <th>مدة آخر مكالمة</th>
+                  <th>الاهتمام</th>
+                  <th>حجز؟</th>
+                  <th>تاريخ الموعد</th>
+                  <th>وقت الموعد</th>
+                  <th>اسم الحالة</th>
+                  <th>ملاحظات الحجز</th>
+                  <th>ملاحظات</th>
+                  <th>الحالة</th>
+                  <th>مين اتصل</th>
+                </tr>
+              </thead>
+              <tbody id="worksheet-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="view" id="view-bookings">
+      <section id="bookings-section">
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px">
+          <h3 style="margin:0">الحجوزات ومكالمات التذكير</h3>
+          <div style="display:flex; align-items:center; gap:12px">
+            <input type="search" class="table-filter" id="bookings-q" data-filter-tbody="bookings-tbody" data-server-search="1" placeholder="دوّر في كل الحجوزات: اسم / حالة / رقم" />
+            <label for="bookings-needs-attendance" style="display:flex; align-items:center; gap:6px; font-size:13px">
+              <input type="checkbox" id="bookings-needs-attendance" />
+              بس اللي محتاج تسجيل نتيجة
+            </label>
+          </div>
+        </div>
+        <div class="toolbar" id="bookings-ranges" style="gap:16px; flex-wrap:wrap; margin-bottom:12px; font-size:13px">
+          <span style="display:flex; align-items:center; gap:6px">
+            <strong>معاد الحجز</strong>
+            <label for="bookings-from" class="sr-only">معاد الحجز من</label>
+            <input type="date" id="bookings-from" />
+            <span>–</span>
+            <label for="bookings-to" class="sr-only">معاد الحجز إلى</label>
+            <input type="date" id="bookings-to" />
+          </span>
+          <span style="display:flex; align-items:center; gap:6px">
+            <strong>اتحجز يوم</strong>
+            <label for="bookings-booked-from" class="sr-only">اتحجز من</label>
+            <input type="date" id="bookings-booked-from" />
+            <span>–</span>
+            <label for="bookings-booked-to" class="sr-only">اتحجز إلى</label>
+            <input type="date" id="bookings-booked-to" />
+          </span>
+          <button id="bookings-clear-filters" class="link-btn">امسح الفلاتر</button>
+        </div>
+        <div id="bookings-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px"></div>
+        <div class="table-wrap">
+          <table id="bookings-table">
+            <thead>
+              <tr>
+                <th>العميل</th>
+                <th>التليفون</th>
+                <th>الدكتور</th>
+                <th>الخدمة</th>
+                <th>اليوم</th>
+                <th>الساعة</th>
+                <th>تاريخ التواصل</th>
+                <th>اتحجز يوم</th>
+                <th>حجزه</th>
+                <th>مسؤول التذكير</th>
+                <th>التذكير</th>
+                <th>الحضور</th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="bookings-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+
+      <!-- التذكيرات: the same four tabs the rep sees in the app, for any rep, with
+           multi-select and a bulk hand-over. The head row and the rows themselves are
+           built per tab in app.js, because the four lists do not share a column set. -->
+      <div class="view" id="view-doctor-report">
+      <section class="no-print" id="doctor-report-controls">
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:10px">
+          <h3 style="margin:0">تقرير الدكتور</h3>
+          <div class="toolbar" style="gap:8px; flex-wrap:wrap">
+            <label for="report-doctor" class="sr-only">الدكتور</label>
+            <select id="report-doctor"><option value="">اختار الدكتور</option></select>
+            <span style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-secondary)">
+              من <input type="date" id="report-from" style="width:auto" />
+              لـ <input type="date" id="report-to" style="width:auto" />
+            </span>
+            <button id="report-run" class="primary">اعرض التقرير</button>
+            <button id="report-print" class="hidden">🖨 PDF / طباعة</button>
+          </div>
+        </div>
+        <div id="report-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          كل اللي السيستم يعرفه عن ليدز الدكتور في المدة: عدد الليدز وحالتهم، الحجوزات والكشوفات، اللي بدأ الخطة، الخدمات، وملخص ملاحظات الموظفات. زرار PDF بيطبع الصفحة دي بس.
+        </div>
+        <div id="report-status" class="empty hidden"></div>
+      </section>
+      <section>
+        <div class="report-paper hidden" id="report-paper"></div>
+      </section>
+      </div>
+
+      <div class="view" id="view-plan-start">
+      <section id="plan-start-section">
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px">
+          <h3 style="margin:0">الخطة العلاجية</h3>
+          <input type="search" id="plan-start-q" placeholder="اسم الحالة أو اسم الليد أو الرقم" style="width:280px" autocomplete="off" />
+        </div>
+        <div id="plan-start-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          كل حالة كشفت بتفضل «مركّبش» لحد ما حد يقول هنا - أو من الموبايل - إنها بدأت. مفيش مواعيد ولا تذكيرات ولا فلاتر: دوّر على الحالة وغيّر حالتها. البونص بيتحسب في شهر البداية.
+        </div>
+        <div id="plan-start-empty" class="empty hidden"></div>
+        <div class="table-wrap" id="plan-start-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>الحالة</th>
+                <th>الليد</th>
+                <th>التليفون</th>
+                <th>الدكتور</th>
+                <th>يوم الكشف</th>
+                <th>الموظف</th>
+                <th>الخطة العلاجية</th>
+                <th>سجّلها</th>
+              </tr>
+            </thead>
+            <tbody id="plan-start-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+
+      <div class="view" id="view-reminders">
+      <section id="reminders-section">
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px">
+          <h3 style="margin:0">المتابعات</h3>
+          <div class="toolbar" style="gap:8px">
+            <input type="search" class="table-filter" id="reminders-q" data-filter-tbody="reminders-tbody" data-list-filter="1" placeholder="دوّر في القايمة كلها: اسم / حالة / رقم" />
+            <label for="reminders-rep" class="sr-only">السيلز</label>
+            <select id="reminders-rep"><option value="">كل السيلز</option></select>
+            <!-- Hidden on محدش كلمها and مردّش امبارح: the server ignores from/to for the
+                 two lead kinds, so a control that stays visible there is a control that
+                 lies. -->
+            <span id="reminders-range" style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-secondary)">
+              من
+              <label for="reminders-from" class="sr-only">من تاريخ</label>
+              <input type="date" id="reminders-from" style="width:auto" />
+              لـ
+              <label for="reminders-to" class="sr-only">لـ تاريخ</label>
+              <input type="date" id="reminders-to" style="width:auto" />
+              <button type="button" class="link-btn" id="reminders-all-dates" title="امسح التاريخين واعرض كل الأيام">كل الأيام</button>
+            </span>
+          </div>
+        </div>
+        <div class="toolbar" id="reminders-tabs" style="margin-bottom:12px"></div>
+        <div id="reminders-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px"></div>
+        <div id="reminders-empty" class="empty hidden"></div>
+        <div class="table-wrap" id="reminders-wrap">
+          <table id="reminders-table">
+            <thead>
+              <tr id="reminders-head"></tr>
+            </thead>
+            <tbody id="reminders-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+
+      <div class="view" id="view-overdue">
+      <section id="overdue-section">
+        <h3>عملاء عدّى عليهم وقت المتابعة</h3>
+        <div id="overdue-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px"></div>
+        <div class="toolbar" style="margin-bottom:10px">
+          <input type="search" class="table-filter" id="overdue-q" data-filter-tbody="overdue-tbody" placeholder="فلتر الصفوف: اسم / حالة / رقم" />
+        </div>
+        <div class="table-wrap">
+          <table id="overdue-table">
+            <thead>
+              <tr>
+                <th>العميل</th>
+                <th>التليفون</th>
+                <th>الموظف</th>
+                <th>الدكتور</th>
+                <th>دخل النظام</th>
+                <th>عدد المحاولات</th>
+                <th>المطلوب دلوقتي</th>
+              </tr>
+            </thead>
+            <tbody id="overdue-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+
+      <div class="view" id="view-calls">
+      <section id="calls-section">
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px">
+          <h3 style="margin:0">سجل مكالمات الفريق</h3>
+          <div class="toolbar" style="gap:8px; flex-wrap:wrap">
+            <label for="calls-rep" class="sr-only">الموظف</label>
+            <select id="calls-rep"><option value="">كل السيلز</option></select>
+            <label for="calls-type" class="sr-only">نوع المكالمة</label>
+            <select id="calls-type">
+              <option value="">كل الأنواع</option>
+              <option value="ring">رنّة - مردّش</option>
+              <option value="answered">رد</option>
+              <option value="inbound">واردة</option>
+              <option value="missed">فايتة</option>
+            </select>
+            <label for="calls-from" class="sr-only">من يوم</label>
+            <input type="date" id="calls-from" />
+            <label for="calls-to" class="sr-only">لحد يوم</label>
+            <input type="date" id="calls-to" />
+            <label for="calls-q" class="sr-only">بحث برقم أو اسم</label>
+            <input type="search" id="calls-q" placeholder="رقم أو اسم عميل أو حالة" style="max-width:180px" />
+            <button type="button" id="calls-export-btn">تصدير Excel</button>
+          </div>
+        </div>
+        <div id="calls-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          نسخة من سجل مكالمات خط الشغل على تليفون كل موظف، زي ما التطبيق رفعها. الموظف اللي التطبيق
+          عنده مقفول أو مش مسموح له يقرأ المكالمات مش هيظهر هنا - وده بنفسه حاجة تتشاف.
+        </div>
+        <div id="calls-summary" class="toolbar" style="gap:16px; flex-wrap:wrap; margin-bottom:12px"></div>
+        <div class="table-wrap" style="margin-bottom:16px">
+          <table id="calls-by-rep-table">
+            <thead>
+              <tr>
+                <th>الموظف</th>
+                <th title="صادر + وارد + فايتة، من خط الشغل زي ما التليفون رفعها">كل المكالمات (صادر + وارد + فايتة)</th>
+                <th title="مكالمات صادرة العميل رد فيها">صادر اتردّ عليه</th>
+                <th title="مجموع مدة المكالمات صادر ووارد">وقت الكلام (صادر + وارد)</th>
+                <th>آخر رفع من التليفون</th>
+              </tr>
+            </thead>
+            <tbody id="calls-by-rep-tbody"></tbody>
+          </table>
+        </div>
+        <div id="calls-empty" class="empty hidden"></div>
+        <div class="table-wrap" id="calls-wrap">
+          <table id="calls-table">
+            <thead>
+              <tr>
+                <th>الوقت</th>
+                <th>الموظف</th>
+                <th>النوع</th>
+                <th>المدة</th>
+                <th>الرقم</th>
+                <th>العميل</th>
+                <th>الدكتور</th>
+              </tr>
+            </thead>
+            <tbody id="calls-tbody"></tbody>
+          </table>
+        </div>
+        <div class="toolbar" style="justify-content:center; gap:8px; margin-top:12px">
+          <button type="button" id="calls-prev">السابق</button>
+          <span id="calls-page-label" style="font-size:12px; color:var(--text-secondary)"></span>
+          <button type="button" id="calls-next">التالي</button>
+        </div>
+      </section>
+      </div>
+
+      <div class="view" id="view-finance">
+      <div class="toolbar" style="justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px">
+        <div class="section-tabs" id="finance-tabs" role="tablist" aria-label="أقسام حسابات الموظفين" style="margin-bottom:0"></div>
+        <div class="toolbar" style="gap:8px; flex-wrap:wrap">
+          <label for="finance-month" class="sr-only">الشهر</label>
+          <select id="finance-month"></select>
+          <button type="button" id="finance-export-btn">تصدير Excel</button>
+        </div>
+      </div>
+
+      <!-- The month's account per employee: salary, the case bonus the system counts on
+           its own, the extra bonus typed here, and whether each went out. -->
+      <section data-finance-tab="payroll" style="margin-top:0">
+        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          الراتب المستحق = الراتب ÷ أيام الشهر × الأيام من تاريخ الانضمام. بونص الحالات بيتحسب لوحده: كل حالة بدأت الخطة العلاجية
+          بتاخد بونص الحالة للموظف اللي حجزها، في الشهر اللي بدأت فيه. البونص الإضافي (بادج أو مكافأة) بتكتبه بإيدك من ✎.
+          دوس على عدد الحالات تشوف أساميها.
+        </div>
+        <div class="tiles" id="finance-tiles" style="margin-bottom:16px"></div>
+        <div id="finance-unassigned" class="hidden" style="font-size:12px; color:var(--warning); margin-bottom:12px"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>الموظف</th><th>الراتب</th><th>أيام</th><th>الراتب المستحق</th><th>حالات بدأت</th><th>بونص الحالات</th><th>بونص إضافي</th><th>الإجمالي</th><th>الراتب</th><th>البونص</th><th>ملاحظات</th><th></th></tr></thead>
+            <tbody id="fin-payroll-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section data-finance-tab="cases" class="hidden" style="margin-top:0">
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px">
+          <div class="toolbar" style="gap:8px; flex-wrap:wrap">
+            <label for="fin-cases-doctor" class="sr-only">العيادة</label>
+            <select id="fin-cases-doctor"><option value="">كل العيادات</option></select>
+            <label for="fin-cases-employee" class="sr-only">الموظف</label>
+            <select id="fin-cases-employee"><option value="">كل الموظفين</option></select>
+            <label for="fin-cases-plan" class="sr-only">الخطة</label>
+            <select id="fin-cases-plan">
+              <option value="">الكل</option>
+              <option value="1">بدأت الخطة</option>
+              <option value="0">لسه مبدأتش</option>
+            </select>
+            <label style="font-size:13px; display:flex; align-items:center; gap:4px"><input type="checkbox" id="fin-cases-flagged" /> المحتاجة مراجعة</label>
+            <label for="fin-cases-q" class="sr-only">بحث</label>
+            <input type="search" id="fin-cases-q" placeholder="اسم أو رقم (في كل الشهور)" style="max-width:200px" />
+          </div>
+          <button type="button" class="primary" id="fin-case-add-btn">+ حالة</button>
+        </div>
+        <div id="fin-cases-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          بيظهر هنا كل حالة كشفت في الشهر أو بدأت الخطة فيه. كل حجز اتعلّم عليه "اتكشف" بيدخل لوحده. "بدأت ✓" - من هنا أو من موبايل
+          الموظف - هو اللي بيحسب البونص. البحث بيدور في كل الحالات مهما كان شهرها.
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>الكشف</th><th>العيادة</th><th>الحالة</th><th>الرقم</th><th>الموظف</th><th>بدأت الخطة</th><th>بونص الحالة</th><th>ملاحظات</th><th></th></tr></thead>
+            <tbody id="fin-cases-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section data-finance-tab="employees" class="hidden" style="margin-top:0">
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px; padding:12px; background:var(--surface-2); border-radius:10px">
+          <div class="field" style="margin:0"><label for="fin-set-bonus">بونص الحالة الافتراضي (جنيه)</label><input type="number" id="fin-set-bonus" min="0" step="1" style="max-width:140px" /></div>
+          <div class="field" style="margin:0"><label for="fin-set-badge">بونص البادج المقترح (جنيه)</label><input type="number" id="fin-set-badge" min="0" step="1" style="max-width:140px" /></div>
+          <button type="button" class="primary" id="fin-settings-save">حفظ</button>
+        </div>
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px">
+          <div style="font-size:12px; color:var(--text-secondary)">الموظف اللي له حساب في النظام بيتربط بيه، فحالاته بتتحسب له لوحدها. بونص الحالة لموظف معيّن بيغلب الافتراضي.</div>
+          <button type="button" class="primary" id="fin-employee-add-btn">+ موظف</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>الموظف</th><th>الحساب</th><th>الراتب</th><th>الانضمام</th><th>الحالة</th><th>بونص الحالة</th><th>بدأت الشهر ده</th><th></th></tr></thead>
+            <tbody id="fin-employees-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+
+      <div class="view" id="view-reps">
+      <section>
+        <h3>أداء الموظفين (دوس على أي موظف لتفاصيل الشهر)</h3>
+        <p id="reps-note" class="hint hidden"></p>
+        <div class="table-wrap">
+          <table id="reps-table">
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>التليفون</th>
+                <th>العملاء</th>
+                <th title="مكالمات الموظف الصادرة من خط الشغل لعملاء القايمة اللي قدامك - بتتغير مع فلتر الدكتور والتاريخ فوق. من غير فلتر: من أول يوم">مكالمات صادرة على عملاء القايمة</th>
+                <th title="نتايج المكالمات اللي الموظف سجّلها في التطبيق على نفس العملاء - أقل من المكالمات لو الموظف بيرن ومبيسجلش">نتايج مسجلة على عملاء القايمة</th>
+                <th title="مكالمات الموظف الصادرة النهاردة اللي العميل رد فيها - من سجل التليفون، نفس مصدر صفحة سجل المكالمات">صادر النهاردة (رد)</th>
+                <th title="مكالمات الموظف الصادرة النهاردة من غير رد - من سجل التليفون">صادر النهاردة (لم يرد)</th>
+                <th title="مكالمات جت للموظف النهاردة: اللي رد عليها + الفايتة">وارد النهاردة</th>
+                <th title="وقت الكلام في المكالمات الصادرة النهاردة، والوارد بين قوسين - نفس مصدر صفحة سجل المكالمات">وقت الكلام النهاردة (صادر)</th>
+              </tr>
+            </thead>
+            <tbody id="reps-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+
+      <div class="view" id="view-distribution">
+      <section id="assignments-section">
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:4px">
+          <h3 style="margin:0">توزيع العملاء على الموظفين</h3>
+          <button id="suggest-links-btn">اقترح الربط من الأحجام</button>
+        </div>
+        <div id="assignments-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px"></div>
+        <div class="table-wrap">
+          <table id="assignments-table">
+            <thead>
+              <tr>
+                <th>الموظف</th>
+                <th>المجموعة</th>
+                <th>الدكتور الأساسي</th>
+                <th>الدكتور الاحتياطي ١</th>
+                <th>الدكتور الاحتياطي ٢</th>
+                <th>مكالمات آخر ٧ أيام</th>
+                <th>حجوزات آخر ٧ أيام</th>
+                <th>عملاء النهاردة</th>
+              </tr>
+            </thead>
+            <tbody id="assignments-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+
+      <!-- Three tables that answer three different questions, behind one row of tabs
+           rather than stacked: the admin opens this page for one of them and should not
+           have to scroll past the other two. The open tab is part of the route
+           (#/workload/pool), so an overview card can land on the right table. -->
+      <div class="view" id="view-workload">
+      <div class="section-tabs" id="workload-tabs" role="tablist" aria-label="أقسام حمل الشغل"></div>
+      <section id="followups-section" data-workload-tab="followups">
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px">
+          <h3 style="margin:0">الشغل المستني</h3>
+          <div class="toolbar" style="gap:8px">
+            <label for="followups-date" class="sr-only">تاريخ الشغل المستني</label>
+            <input type="date" id="followups-date" />
+          </div>
+        </div>
+        <div id="followups-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          نفس التبويبات اللي السيلز شايفها في التطبيق. "متابعة لاحقة" و"الحجوزات" بيتحسبوا في اليوم
+          المختار نفسه، و"محدش كلمها" و"مردّش امبارح" حالة لحد اليوم ده. اللي عنده رقم في "محدش كلمها"
+          هو اللي محتاج تلحقه.
+        </div>
+        <div id="followups-empty" class="empty hidden"></div>
+        <div class="table-wrap" id="followups-wrap">
+          <table id="followups-table">
+            <thead>
+              <tr>
+                <th>السيلز</th>
+                <th>المجموعة</th>
+                <th>متابعة لاحقة</th>
+                <th>الحجوزات</th>
+                <th>محدش كلمها</th>
+                <th title="حجوزات من امبارح وقبل كده متسجلش عليها تم الكشف ولا مجاش - بتمنع مفيش شغل. حجوزات النهارده مش محسوبة لحد بكرة.">عدّى ميعادها</th>
+                <th>تم الكشف</th>
+                <th>الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody id="followups-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- After the visit: the clients who were examined and have not started the plan,
+           who is ringing them, and whether the ringing works. Rows are cases from the
+           accounts, so the sheet's old cases are here too. -->
+      <section id="plan-section" data-workload-tab="plan">
+        <h3>كشف ولسه مبدأش الخطة</h3>
+        <div id="plan-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px"></div>
+        <div class="tiles" id="plan-tiles" style="margin-bottom:16px"></div>
+        <div class="toolbar" style="gap:8px; margin-bottom:12px; flex-wrap:wrap">
+          <label for="plan-state" class="sr-only">الحالة</label>
+          <select id="plan-state">
+            <option value="pending">لسه مبدأش</option>
+            <option value="started">بدأ الخطة</option>
+            <option value="closed">اتقفلت</option>
+            <option value="all">الكل</option>
+          </select>
+          <label for="plan-rep" class="sr-only">الموظف</label>
+          <select id="plan-rep"></select>
+          <label for="plan-doctor" class="sr-only">العيادة</label>
+          <select id="plan-doctor"></select>
+          <label for="plan-origin" class="sr-only">مصدر الحالة</label>
+          <select id="plan-origin" title="الحالة اللي من السيستم ليها ليد وموظف شغل عليها؛ اللي من الشيت مالهاش ليد">
+            <option value="">كل الحالات</option>
+            <option value="system">من السيستم (ليها ليد)</option>
+            <option value="sheet">من شيت العيادات (من غير ليد)</option>
+          </select>
+          <label style="display:flex; align-items:center; gap:4px; font-size:13px"><input type="checkbox" id="plan-due" /> اللي ميعادها جه بس</label>
+          <label for="plan-search" class="sr-only">بحث</label>
+          <input type="search" id="plan-search" placeholder="اسم الحالة أو الرقم" />
+        </div>
+        <div class="table-wrap">
+          <table id="plan-table">
+            <thead>
+              <tr>
+                <th>الحالة</th>
+                <th>العيادة</th>
+                <th>الكشف</th>
+                <th>اللي بيتابع</th>
+                <th>المحاولات</th>
+                <th>آخر متابعة</th>
+                <th>المتابعة الجاية</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="plan-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="pool-section" data-workload-tab="pool">
+        <h3>مخزون الدكاترة — ليدز مستنية حد يسحبها</h3>
+        <div id="pool-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          كل دكتور ليه مخزون مشترك. السيلز المربوطين بيه بيسحبوا منه بنفسهم. الدكتور اللي
+          عنده ليدز في المخزون ومفيش سيلز مربوط بيه محدش هيسحب ليدزه أبداً.
+        </div>
+        <div class="table-wrap">
+          <table id="pool-table">
+            <thead>
+              <tr>
+                <th>الدكتور</th>
+                <th>المجموعة</th>
+                <th>في المخزون</th>
+                <th>أقدم ليد مستني من</th>
+                <th>السيلز المربوطين</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="pool-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="workload-section" data-workload-tab="manual">
+        <h3>حمل الشغل والتوزيع اليدوي</h3>
+        <div id="workload-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          الليدز بتوصل لمخزون الدكتور المشترك، وأي سيلز مربوط بيه (أساسي/فرعي/تالت) بيسحب
+          منه بنفسه. الصفحة دي للطوارئ — لو حد غاب، تقدر إما تنقل ليدزه الشغالة على زمايله في
+          نفس المجموعة بالتساوي، أو ترجعها للمخزون تاني عشان أي حد مربوط بنفس الدكتور يسحبها.
+          "شغالة" يعني لسه محتاجة حاجة: جديدة، مردّش، متأخرة، أو محجوزة ومحتاجة مكالمة تذكير.
+          اللي اتقفل خلاص مابيتحركش.
+        </div>
+        <div class="table-wrap">
+          <table id="workload-table">
+            <thead>
+              <tr>
+                <th>السيلز</th>
+                <th>المجموعة</th>
+                <th>الدكتور الأساسي</th>
+                <th>ليدز شغالة</th>
+                <th>دخلوا النهاردة</th>
+                <th>إجمالي الليدز</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="workload-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+
+      <div class="view" id="view-attendance">
+      <section>
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px">
+          <h3 style="margin:0">الحضور والغياب</h3>
+          <div class="toolbar" style="gap:8px">
+            <label for="attendance-date" class="sr-only">تاريخ الحضور</label>
+            <input type="date" id="attendance-date" />
+            <button id="attendance-record-btn">+ سجّل غياب أو إذن</button>
+            <button id="weekly-off-btn" class="hidden">أيام الإجازة الأسبوعية</button>
+          </div>
+        </div>
+        <div id="attendance-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          الحضور بيتحسب تلقائي من شغل الموظف نفسه — أول وآخر نشاط في اليوم، بتوقيت القاهرة. النشاط
+          يعني أي حاجة السيرفر شافها: سحب ليدز، مكالمة اتسجلت، حجز، مكالمة تذكير، متابعة اتحطت،
+          واتساب اتبعت، أو تقرير اليوم من التليفون. مفيش تسجيل دخول يدوي، لأن زرار الحضور بيقيس
+          إن حد دوس زرار مش إنه اشتغل. الغياب والإجازات والأذونات هي بس اللي بتتسجل يدوي.
+        </div>
+        <div class="table-wrap">
+          <table id="attendance-table">
+            <thead>
+              <tr>
+                <th>السيلز</th>
+                <th>المجموعة</th>
+                <th>الحالة</th>
+                <th title="أول حاجة اتسجلت باسم الموظف في اليوم: مكالمة أو نتيجة أو حجز أو سحب ليدز">أول نشاط</th>
+                <th title="آخر حاجة اتسجلت باسمه في اليوم">آخر نشاط</th>
+                <th title="كل حاجة اتسجلت باسم الموظف في اليوم: مكالمات التليفون + النتايج المسجلة + الحجوزات + التذكيرات + سحب الليدز + رسايل الواتساب. مش عدد مكالمات - ده في صفحة سجل المكالمات">حركات على السيستم</th>
+                <th title="الوقت اللي التطبيق كان مفتوح وبيتشتغل عليه فعلاً (جلسات شغل بتنقطع بعد ربع ساعة من غير حركة). مش وقت الكلام في التليفون">وقت الشغل في التطبيق</th>
+                <th>مفيش شغل</th>
+                <th>المسجّل</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="attendance-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section style="margin-top:26px">
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px">
+          <h3 style="margin:0">أهداف السيلز اليومية</h3>
+          <button id="targets-all-btn" class="hidden">هدف واحد للكل</button>
+        </div>
+        <div id="targets-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          لكل سيلز هدف يومي: عدد مكالمات، دقايق كلام، أو الاتنين. الهدف بيفضل زي ما هو كل يوم لحد ما تغيّره.
+          كل المكالمات على خط الشغل بتتحسب، رد أو مردّش، والدقايق هي وقت الكلام الفعلي. الموظف بيشوف هدفه
+          وتقدمه على الشاشة الرئيسية في التطبيق. سيب الخانة فاضية لو مش عايز الشرط ده.
+        </div>
+        <div class="table-wrap">
+          <table id="targets-table">
+            <thead>
+              <tr>
+                <th>السيلز</th>
+                <th>المجموعة</th>
+                <th>مكالمات / يوم</th>
+                <th>دقايق كلام / يوم</th>
+                <th>النهاردة</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="targets-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section style="margin-top:26px">
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px">
+          <h3 style="margin:0">بادجات اليوم</h3>
+          <label for="badges-date" class="sr-only">تاريخ البادجات</label>
+          <input type="date" id="badges-date" />
+        </div>
+        <div id="badges-note" style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          البادج بيتحسب على هدف اليوم اللي فوق: لما السيلز يوصل للهدف = "ممتاز" على طول، ولو اليوم
+          خلص وهو لسه ماوصلش = "شد شوية". لو كان غايب أو في إجازة، أو أثبت إنه دخل يسحب ليدز ٥ مرات
+          ولقى مفيش (كل مرة بعد التانية بنص ساعة)، اليوم ده مابياخدش بادج. وانت تقدر تغيّر بادج أي يوم
+          لأي سيلز من زرار "عدّل".
+        </div>
+        <div class="table-wrap">
+          <table id="badges-table">
+            <thead>
+              <tr>
+                <th>السيلز</th>
+                <th>المجموعة</th>
+                <th>البادج</th>
+                <th>الهدف</th>
+                <th>اتحقق</th>
+                <th>السبب</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="badges-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section style="margin-top:26px">
+        <div class="toolbar" style="justify-content:space-between; margin-bottom:12px">
+          <h3 style="margin:0">ملخص الشهر</h3>
+          <label for="attendance-month" class="sr-only">الشهر</label>
+          <input type="month" id="attendance-month" />
+        </div>
+        <div class="table-wrap">
+          <table id="attendance-summary-table">
+            <thead>
+              <tr>
+                <th>السيلز</th>
+                <th>المجموعة</th>
+                <th>أيام اشتغل فيها</th>
+                <th>غياب</th>
+                <th>إجازات</th>
+                <th>أذونات</th>
+                <th>إجازة أسبوعية</th>
+                <th>أيام مفيش شغل</th>
+                <th>ممتاز</th>
+                <th>شد شوية</th>
+              </tr>
+            </thead>
+            <tbody id="attendance-summary-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+
+      <div class="view" id="view-upload">
+        <section>
+          <h3>رفع شيت عملاء</h3>
+          <p class="hint">اختار الدكتور والكامبين الأول، وبعدين ارفع الشيت أو حط لينك جوجل شيتس. بعد القراءة هتختار مين العمود بتاع الاسم ورقم الهاتف ورقم الواتساب بنفسك، وبعدين الصفوف بتتنضف وتتوزع تلقائي.</p>
+          <div class="toolbar" style="margin-bottom:16px">
+            <label for="upload-doctor" class="sr-only">الدكتور</label>
+            <select id="upload-doctor"><option value="">اختار دكتور</option></select>
+            <label for="upload-campaign" class="sr-only">الكامبين</label>
+            <select id="upload-campaign"><option value="">اختار كامبين</option></select>
+            <button id="add-campaign-btn2" class="hidden">+ كامبين جديد</button>
+            <button id="delete-campaign-btn" class="hidden danger">🗑 امسح الكامبين</button>
+          </div>
+          <div id="upload-panel" class="upload-panel">
+            <div class="row" style="width:100%; gap:16px; margin-bottom:8px">
+              <label for="upload-source-file"><input type="radio" name="upload-source" id="upload-source-file" value="file" checked /> ملف Excel</label>
+              <label for="upload-source-link"><input type="radio" name="upload-source" id="upload-source-link" value="link" /> لينك جوجل شيتس</label>
+            </div>
+            <label for="upload-file" class="sr-only">ملف الشيت</label>
+            <input type="file" id="upload-file" accept=".xlsx,.xls,.csv" style="max-width:100%" />
+            <label for="upload-sheet-link" class="sr-only">لينك جوجل شيتس</label>
+            <input type="text" id="upload-sheet-link" class="hidden" style="width:100%" placeholder="https://docs.google.com/spreadsheets/d/..." />
+            <button class="primary" id="upload-btn">رفع ومعاينة</button>
+            <div id="upload-columns" style="width:100%"></div>
+            <div id="upload-summary" class="upload-summary" style="width:100%"></div>
+            <div id="upload-history" style="width:100%"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="view" id="view-doctors">
+        <section>
+          <div class="section-head">
+            <h3>الدكاترة والكامبينات</h3>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <button id="onboard-doctor-btn" class="primary hidden">🚀 أونبوردنج دكتور جديد</button>
+              <button id="add-doctor-btn2" class="hidden">+ دكتور جديد (الاسم بس)</button>
+            </div>
+          </div>
+          <p class="hint">كل دكتور بينتمي لمجموعة، وبياخد ليدز من سيلز المجموعة دي بس.</p>
+          <div id="doctors-list"></div>
+        </section>
+      </div>
+
+      <div class="view" id="view-services">
+      <section id="services-section">
+        <h3>الخدمات</h3>
+        <div class="svc-add">
+          <label for="new-service-name" class="sr-only">اسم خدمة جديدة</label>
+          <input type="text" id="new-service-name" placeholder="اسم خدمة جديدة" />
+          <button class="primary" id="add-service-btn">+ إضافة</button>
+        </div>
+        <div id="services-list" class="card svc-list"></div>
+      </section>
+      </div>
+
+      <div class="view" id="view-templates">
+      <section id="templates-section">
+        <h3>نصوص الرسائل الجاهزة</h3>
+        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px">
+          التعديل هنا بيوصل لكل الموظفين على طول من غير تحديث للتطبيق.
+          استخدم <code>{{lead_name}}</code> وزيها عشان القيم تتحط مكانها.
+        </div>
+        <div id="templates-list"></div>
+      </section>
+      </div>
+
+      <div class="view" id="view-accounts">
+      <section id="accounts-section">
+        <h3>حسابات السيلز</h3>
+        <div class="toolbar" style="margin-bottom:12px">
+          <button class="primary" id="add-rep-btn">+ سيلز جديد</button>
+        </div>
+        <div class="table-wrap">
+          <table id="accounts-table">
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>التليفون</th>
+                <th>المجموعة</th>
+                <th>نسخة التطبيق</th>
+                <th>آخر ظهور</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="accounts-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      <section id="staff-section" class="hidden">
+        <h3>إدارة الموظفين والصلاحيات</h3>
+        <div class="toolbar" style="margin-bottom:12px">
+          <button class="primary" id="add-user-btn">+ حساب جديد</button>
+          <span style="font-size:12px; color:var(--text-secondary)">
+            سوبر أدمن بس هو اللي يقدر يضيف أو يمسح حسابات
+          </span>
+        </div>
+        <div class="table-wrap">
+          <table id="staff-table">
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>التليفون</th>
+                <th>الصلاحية</th>
+                <th>المجموعة</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="staff-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+
+      <!-- Publishing a build is operational, not daily work, and only a super admin may
+           do it - so it lives at the end of الإعدادات and the nav entry itself is
+           role-gated, the same way رفع الشيتات and الحسابات are. -->
+      <div class="view" id="view-app">
+        <section>
+          <div class="section-head">
+            <h3>النسخة المنشورة دلوقتي</h3>
+            <button id="app-release-refresh-btn">تحديث الحالة</button>
+          </div>
+          <p class="hint">
+            دي النسخة اللي التطبيق بيلاقيها لما يسأل عن تحديث. الملف بيتحفظ على القرص الدايم
+            جنب الداتابيز، فالنشر مش محتاج أي deploy للسيرفر.
+          </p>
+          <div id="app-release-current"></div>
+        </section>
+
+        <section style="margin-top:26px">
+          <h3>ارفع نسخة جديدة</h3>
+          <p class="hint">
+            رقم النسخة واسمها بيتقروا من الملف نفسه - سيب الخانتين فاضيتين، ولو كتبتهم لازم
+            يطابقوا اللي في الملف. السيلز بيتعرض عليهم التحديث بس لما versionCode يبقى أكبر من
+            المنشور دلوقتي.
+          </p>
+          <div class="upload-panel">
+            <div class="field" style="width:100%; margin-bottom:0">
+              <label for="app-release-file">ملف الـAPK <span style="color:var(--critical)">*</span></label>
+              <input type="file" id="app-release-file" accept=".apk" style="max-width:100%" />
+              <div id="app-release-file-info" style="font-size:12px; color:var(--text-secondary); margin-top:6px">
+                مفيش ملف مختار
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; width:100%">
+              <div class="field" style="margin-bottom:0">
+                <label for="app-release-code">رقم النسخة versionCode <span style="color:var(--text-muted)">— بيتقرا من الملف</span></label>
+                <input type="text" id="app-release-code" inputmode="numeric" placeholder="اختياري — للتأكيد بس" />
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label for="app-release-name">اسم النسخة versionName <span style="color:var(--text-muted)">— بيتقرا من الملف</span></label>
+                <input type="text" id="app-release-name" maxlength="40" placeholder="اختياري — للتأكيد بس" />
+              </div>
+            </div>
+
+            <div class="field" style="width:100%; margin-bottom:0">
+              <label for="app-release-notes">ملاحظات النسخة <span style="color:var(--text-muted)">— اختياري، ٥٠٠ حرف كحد أقصى</span></label>
+              <textarea id="app-release-notes" rows="3" maxlength="500" placeholder="إيه اللي اتغيّر في النسخة دي؟"></textarea>
+            </div>
+
+            <div id="app-release-progress" class="hidden" style="width:100%">
+              <div style="height:6px; border-radius:999px; background:var(--surface-3); overflow:hidden">
+                <div id="app-release-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                     style="height:100%; width:0%; background:var(--brand); transition:width 140ms linear"></div>
+              </div>
+              <div id="app-release-progress-label"
+                   style="font-size:12px; color:var(--text-secondary); margin-top:6px; font-variant-numeric:tabular-nums"></div>
+            </div>
+
+            <button class="primary" id="app-release-publish-btn">انشر النسخة دي</button>
+            <p class="error" id="app-release-error" style="width:100%; margin:0"></p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- Static modals share the same .modal-backdrop/.modal shell (and the same keyboard,
+     focus, and backdrop behaviour, via openModalShell in app.js) as the generated ones. -->
+<div id="password-modal" class="modal-backdrop hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="password-modal-title">
+    <h2 id="password-modal-title">تغيير كلمة السر</h2>
+    <div id="password-modal-sub" class="sub"></div>
+
+    <div class="field">
+      <label for="pw-current">كلمة السر الحالية</label>
+      <input id="pw-current" type="password" autocomplete="current-password" />
+    </div>
+    <div class="field">
+      <label for="pw-new">كلمة السر الجديدة</label>
+      <input id="pw-new" type="password" autocomplete="new-password" />
+    </div>
+    <div class="field">
+      <label for="pw-confirm">أعد كتابة الجديدة</label>
+      <input id="pw-confirm" type="password" autocomplete="new-password" />
+    </div>
+
+    <p class="error" id="pw-error" style="min-height:18px"></p>
+    <div class="modal-actions">
+      <button class="primary" id="pw-save-btn">حفظ</button>
+      <button id="pw-cancel-btn">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div id="lead-modal" class="modal-backdrop hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="lead-modal-title">
+    <h2 id="lead-modal-title" style="margin-bottom:16px">عميل جديد</h2>
+
+    <div class="field">
+      <label for="lead-name">الاسم</label>
+      <input id="lead-name" type="text" />
+    </div>
+    <div class="field">
+      <label for="lead-phone">رقم التليفون (للاتصال)</label>
+      <input id="lead-phone" type="tel" />
+    </div>
+    <div class="field">
+      <label for="lead-whatsapp">رقم الواتساب <span style="color:var(--text-muted)">— سيبه فاضي لو نفس الرقم</span></label>
+      <input id="lead-whatsapp" type="tel" />
+    </div>
+    <div class="field">
+      <label for="lead-alt-name">اسم تاني <span style="color:var(--text-muted)">— اختياري (الأم، الزوج، اللي بيرد)</span></label>
+      <input id="lead-alt-name" type="text" />
+    </div>
+    <div class="field">
+      <label for="lead-alt-phone">رقم تاني للتواصل <span style="color:var(--text-muted)">— اختياري، تليفون أو واتساب</span></label>
+      <input id="lead-alt-phone" type="tel" />
+    </div>
+    <div class="field">
+      <label for="lead-notes">ملاحظات</label>
+      <textarea id="lead-notes" rows="3" style="width:100%"></textarea>
+    </div>
+    <div class="field">
+      <label for="lead-doctor">الدكتور</label>
+      <select id="lead-doctor"></select>
+    </div>
+    <div class="field" id="lead-campaign-field">
+      <label for="lead-campaign">الكامبين</label>
+      <select id="lead-campaign"></select>
+    </div>
+    <div class="field">
+      <label for="lead-rep">الموظف</label>
+      <select id="lead-rep"></select>
+    </div>
+
+    <p class="error" id="lead-error" style="min-height:18px"></p>
+    <div class="modal-actions">
+      <button class="primary" id="lead-save-btn">حفظ</button>
+      <button id="lead-cancel-btn">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div id="activity-modal" class="modal-backdrop hidden">
+  <div class="modal wide" role="dialog" aria-modal="true" aria-label="سجل النشاط">
+    <div id="activity-content"></div>
+    <button style="width:100%; margin-top:16px" id="activity-close-btn">قفل</button>
+  </div>
+</div>
+
+<div id="monthly-modal" class="modal-backdrop hidden">
+  <div class="modal xwide" role="dialog" aria-modal="true" aria-label="تقرير الموظف">
+    <div id="monthly-content"></div>
+    <button style="width:100%; margin-top:16px" id="monthly-close-btn">قفل</button>
+  </div>
+</div>
+
+<script src="/app.js" defer></script>
+
+</body>
+</html>

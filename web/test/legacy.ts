@@ -7,8 +7,20 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 export const WEB_ROOT = path.resolve(__dirname, '..');
-export const LEGACY_PUBLIC = process.env.LEGACY_PUBLIC_DIR ?? path.resolve(WEB_ROOT, '../../lead-to-doctor/backend/public');
-export const LEGACY_DESIGN_MD = process.env.LEGACY_DESIGN_MD ?? path.resolve(LEGACY_PUBLIC, '../../DESIGN.md');
+
+/** The original checked out beside saas-crm/ (a developer's machine). */
+export const SIBLING_PUBLIC = path.resolve(WEB_ROOT, '../../lead-to-doctor/backend/public');
+export const SIBLING_DESIGN_MD = path.resolve(SIBLING_PUBLIC, '../../DESIGN.md');
+/** The frozen copy committed with the tests, for CI and any checkout without the original (see its README). */
+export const FROZEN_DIR = path.join(__dirname, 'legacy-reference');
+
+const siblingPresent = existsSync(path.join(SIBLING_PUBLIC, 'index.html'));
+
+/** An explicit LEGACY_PUBLIC_DIR wins; then the original beside saas-crm/; then the frozen copy. */
+export const LEGACY_PUBLIC = process.env.LEGACY_PUBLIC_DIR ?? (siblingPresent ? SIBLING_PUBLIC : FROZEN_DIR);
+export const LEGACY_DESIGN_MD =
+  process.env.LEGACY_DESIGN_MD ??
+  (process.env.LEGACY_PUBLIC_DIR ? path.resolve(LEGACY_PUBLIC, '../../DESIGN.md') : siblingPresent ? SIBLING_DESIGN_MD : path.join(FROZEN_DIR, 'DESIGN.md'));
 
 export function legacyAvailable() {
   return existsSync(path.join(LEGACY_PUBLIC, 'index.html'));

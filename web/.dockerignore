@@ -44,3 +44,5 @@ Thumbs.db
 .prettierrc
 .tsbuildinfo
 next-env.d.ts
+# Frozen copy of the original dashboard: test reference only
+test/legacy-reference
